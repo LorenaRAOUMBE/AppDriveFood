@@ -3,10 +3,9 @@ const mysql = require('mysql');
 // Configuration de la base de données 
 const optionBD = {
   host: 'srv1789.hstgr.io',
-  user: 'u805707239_test',
-  password: '@12345678Data',
-  port: 3306,
-  database: 'u805707239_test',
+  user: 'u805707239_tchopshap',
+  password: '@Tchopshap241',
+  database: 'u805707239_sophie',
 };
 
 // Création d'un pool pour gérer efficacement les connexions)
