@@ -7,9 +7,9 @@ router.get("/administrateur", (req, res) => {
   pool.query("SELECT * FROM administrateur", [], (erreur, resultat) => {
     if (erreur) {
       console.log(erreur);
-      res.status(500).render("erreur", { erreur });
+      res.status(500).send({ erreur });
     } else {
-      res.status(200).render("index", { resultat });
+      res.status(200).send({ resultat });
     }
   });
 });
