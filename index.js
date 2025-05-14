@@ -12,22 +12,14 @@ const restaurantRoute =require('./Routes/restaurantRoute');
 const clientRoute =require('./Routes/clientRoute');
 const commandeRoute =require('./Routes/commandeRoute');
 const jwt= require("jsonwebtoken");
-const { configDotenv } = require("dotenv");
+
 
 //  Création du serveur Express
 const app = express();
 
-// Configuration CORS avec options
-const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3400'], // Ajoutez vos domaines autorisés
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
+// Definition du middleware pour connexion
 
-// Appliquer CORS avec les options
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
