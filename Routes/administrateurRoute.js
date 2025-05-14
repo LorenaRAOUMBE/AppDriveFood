@@ -9,7 +9,7 @@ router.get("/administrateur", (req, res) => {
       console.log(erreur);
       res.status(500).send({ erreur });
     } else {
-      res.status(200).send({ resultat });
+      res.status(200).send( resultat );
     }
   });
 });
@@ -42,7 +42,7 @@ router.post("/administrateur", (req, res) => {
       console.log(erreur);
       res.status(500).json({ erreur });
     } else {
-      res.status(201).json({ message: "Administrateur créé avec succès" });
+      res.status(201).send({ message: "Administrateur créé avec succès" });
     }
   });
 });

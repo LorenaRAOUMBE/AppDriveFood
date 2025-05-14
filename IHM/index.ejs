@@ -6,14 +6,13 @@
     <title>Accueil</title>
 </head>
 <body>
-    <div style="width: 50%; margin:auto ;"></div>
-        <header>  
+    <div style="width: 50%; margin:auto ;">
+        <header>
             <h1>Drivefood</h1>
             <nav>
                 <ul>
                     <li><a href="/apropos">A propos</a></li>
                     <li><a href="/nouscontacter">Contact</a></li>
-                    
                 </ul>
             </nav>
         </header>
@@ -34,53 +33,61 @@
         <p>......................................</p>
         <section>
             <h2>Listes des administrateurs</h2>
-              <table>
-               <thead>
-                <tr>
-                    <th>id</th>
-                    <th>Nom</th>
-                    <th>Prenom</th>
-                    <th>Email</th>
-                    <th> modifier</th>
-                    <th> supprimer</th>
-                </tr>
-               </thead>  
-               <tbody>
-                 <% for(i=0;i<resultat.length;i++){ %>  
-                   <tr>
-                    <td><%= resultat[i].id %></td>
-                    <td><%= resultat[i].nom %></td>
-                    <td><%= resultat[i].prenom %></td>
-                    <td><%= resultat[i].email %></td> 
-                    <td>
-                        <input type="button" value="modifier" onclick="remplirDonnees('<%= resultat[i].id %>','<%= resultat[i].nom %>','<%= resultat[i].prenom %>','<%= resultat[i].email %>')">
-                    </td>
-                    <td>
-                        <input type="button" value="supprimer" onclick="supprimerAdministrateur('<%= resultat[i].id %>')">
-                    </td>
-                  </tr>
-                  <% } %>
-                  </section>  
-                </body>
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>Nom</th>
+                        <th>Prenom</th>
+                        <th>Email</th>
+                        <th> modifier</th>
+                        <th> supprimer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(i=0;i<resultat.length;i++){ %>
+                        <tr>
+                            <td><%= resultat[i].id %></td>
+                            <td><%= resultat[i].nom %></td>
+                            <td><%= resultat[i].prenom %></td>
+                            <td><%= resultat[i].email %></td>
+                            <td>
+                                <input type="button" value="modifier" onclick="remplirDonnees('<%= resultat[i].id %>','<%= resultat[i].nom %>','<%= resultat[i].prenom %>','<%= resultat[i].email %>')">
+                            </td>
+                            <td>
+                                <input type="button" value="supprimer" onclick="supprimer('<%= resultat[i].id %>')">
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </section>
+    </div>
+</body>
 <script>
-  function remplirDonnees(id, nom, prenom, email) {
-    document.getElementById('id').value = id;
-    document.getElementById('nom').value = nom;
-    document.getElementById('prenom').value = prenom;
-    document.getElementById('email').value = email;
-  }
+//     function remplirDonnees(id, nom, prenom, email) {
+//     document.getElementById('id').value = id;
+//     document.getElementById('nom').value = nom;
+//     document.getElementById('prenom').value = prenom;
+//     document.getElementById('email').value = email;
+//     document.querySelector('input[type="submit"]').value = "Modifier";
+// }
+// document.getElementById('formAdmin').addEventListener('submit', () => {
+//     document.querySelector('input[type="submit"]').value = "Enregistrer";
+// });
 
-  function supprimerAdministrateur(id) {
-    let pointFinal = "administrateur/"+ id;
-    fetch(pointFinal, {
-      method: 'DELETE'
-    })
-    .then(response => response.json())
-    .then(donnee => {
-      window.location.href = donnee.routeRacine;
-    });
-  };
 
-  
+    function supprimer(id){
+        let pointFinal = `/administrateur/:id`; 
+        fetch(pointFinal, {method:'DELETE'})
+        .then(response => response.json())
+        .then(donnee => {
+            window.location.href = donnee.routeRacine;
+        })
+        .catch(error => {
+            console.error("Erreur lors de la suppression :", error);
+            res.status(200).json({ message: "Nous ne parvenons pas a supprimé cet administrateur" });
+        });
+    };
 </script>
 </html>

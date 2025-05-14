@@ -10,7 +10,7 @@ router.get("/client", (req, res) => {
         console.log(erreur);
         res.status(500).render  ("erreur",{erreur});
       }else{
-        res.status(200).send({resultat:resultat });
+        res.status(200).send(resultat);
       }
     });
   });
@@ -31,7 +31,7 @@ router.get("/client/:idClient", (req, res) => {
           return res.status(404).json({ error: "Client non trouvé" });
       }
 
-      res.status(200).json(resultat[0]);
+      res.status(200).send(resultat[0]);
   });
 });
   //  Ajouter d un client

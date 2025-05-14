@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil</title>
+</head>
+<body>
+    <div style="width: 50%; margin:auto ;"></div>
+        <header>  
+            <h1>Drivefood</h1>
+            <nav>
+                <ul>
+                    <li><a href="/apropos">A propos</a></li>
+                    <li><a href="/nouscontacter">Contact</a></li>
+                    
+                </ul>
+            </nav>
+        </header>
+        <section>
+            <h2>Administrateur</h2>
+            <form action="/administrateur" method="post">
+                <label for="id">id :</label>
+                <input type="hidden" id="id" name="id"> <br><br>
+                <label for="nom">Noms :</label>
+                <input type="text" id="nom" name="nom"> <br><br>
+                <label for="prenom">Prenoms :</label>
+                <input type="text" id="prenom" name="prenom"> <br><br>
+                <label for="email">Email :</label>
+                <input type="text" id="email" name="email"> <br><br>
+                <input type="submit" value="Enregistrer ">
+            </form>
+        </section>
+        <p>......................................</p>
+        <section>
+            <h2>Listes des administrateurs</h2>
+              <table>
+               <thead>
+                <tr>
+                    <th>id</th>
+                    <th>Nom</th>
+                    <th>Prenom</th>
+                    <th>Email</th>
+                    <th> modifier</th>
+                    <th> supprimer</th>
+                </tr>
+               </thead>  
+               <tbody>
+                 <% for(i=0;i<resultat.length;i++){ %>  
+                   <tr>
+                    <td><%= resultat[i].id %></td>
+                    <td><%= resultat[i].nom %></td>
+                    <td><%= resultat[i].prenom %></td>
+                    <td><%= resultat[i].email %></td> 
+                    <td>
+                        <input type="button" value="modifier" onclick="remplirDonnees('<%= resultat[i].id %>','<%= resultat[i].nom %>','<%= resultat[i].prenom %>','<%= resultat[i].email %>')">
+                    </td>
+                    <td>
+                        <input type="button" value="supprimer" onclick="supprimer('<%= resultat[i].id %>')">
+                    </td>
+                  </tr>
+                  <% } %>
+                  </section>  
+                </body>
+<script>
+  function remplirDonnees(id, nom, prenom, email) {
+    document.getElementById('id').value = id;
+    document.getElementById('nom').value = nom;
+    document.getElementById('prenom').value = prenom;
+    document.getElementById('email').value = email;
+  }
+
+  function supprimer(id){
+  
+    let pointFinal = `administrateur/`+ id;
+    fetch(pointFinal, {method:'DELETE'}
+    )
+    .then(response => response.json())
+    .then(donnee => {
+        window.location.href = donnee.routeRacine;
+    });
+};
+
+  
+</script>
+</html>

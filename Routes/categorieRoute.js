@@ -9,7 +9,7 @@ router.get("/categorie", (req, res) => {
             console.log("Erreur lors de la récupération des catégories:", erreur);
             return res.status(500).json({ error: "Erreur serveur", details: erreur.message });
         }
-        else res.status(200).send({ categories: resultat });
+        else res.status(200).send(resultat);
     });
 });
 
@@ -28,7 +28,7 @@ router.get("/categorie/:idCategorie", (req, res) => {
             return res.status(404).json({ error: "Catégorie non trouvée" });
         }
 
-        res.status(200).json(resultat[0]);
+        res.status(200).send(resultat);
     });
 });
 

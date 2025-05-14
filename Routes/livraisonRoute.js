@@ -10,7 +10,7 @@ router.get("/livraison", (req, res) => {
       console.log(erreur);
       res.status(500).render("erreur", { erreur }); 
     } else {
-      res.status(200).send( { resultat });
+      res.status(200).send(resultat);
     }
   });
 });
@@ -25,7 +25,7 @@ router.get("/livraison/:idLivraison", (req, res) =>{
           console.error("Erreur lors de la récupération de la livraison:", erreur);
           return res.status(500).json({ error: "Erreur serveur", details: erreur.message });
       }
-      res.status(200).json(resultat[0]);
+      res.status(200).send(resultat[0]);
   });
 });
 

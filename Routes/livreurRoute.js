@@ -10,7 +10,7 @@ router.get("/livreur", (req, res) => {
         console.log(erreur);
         res.status(500).render("erreur",{erreur});
       }else{
-        res.status(200).send({resultat:resultat });
+        res.status(200).send(resultat);
       }
     });
   });
@@ -26,7 +26,7 @@ router.get("/livreur", (req, res) => {
       } else if (resultat.length === 0) {
         res.status(404).json({ message: "Livreur non trouvé" });
       } else {
-        res.status(200).json({ livreur: resultat[0] });
+        res.status(200).send(resultat[0]);
       }
     });
   });

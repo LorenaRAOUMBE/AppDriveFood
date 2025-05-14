@@ -10,7 +10,7 @@ router.get("/plat", (req, res) => {
         console.log(erreur);
         res.status(500).render ("erreur",{erreur});
       }else{
-        res.status(200).send({resultat:resultat });
+        res.status(200).send(resultat);
       }
     });
   });
@@ -27,16 +27,16 @@ router.get("/plat", (req, res) => {
             return res.status(500).json({ error: "Erreur serveur", details: erreur.message });
         }
 
-        res.status(200).json(resultat[0]);
+        res.status(200).send(resultat[0]);
     });
 });
   // creation nouveau plat das la carte
   router.post("/plat", (req, res) => {
-    const { idRestaurant, nom, prix, details } = req.body;
+    const { idRestaurant, nom, prix, details,photo} = req.body;
   
-    const sql = ` INSERT INTO plat (idRestaurant, nom, prix, details) VALUES (?, ?, ?, ?)
+    const sql = ` INSERT INTO plat (idRestaurant, nom, prix, details,photo) VALUES (?, ?, ?, ?,?)
     `;
-    const data = [idRestaurant, nom, prix, details];
+    const data = [idRestaurant, nom, prix, details,photo];
   
     pool.query(sql, data, (erreur, resultat) => {
       if (erreur) {
@@ -52,10 +52,10 @@ router.get("/plat", (req, res) => {
 
   router.put("/plat/:idPlat", (req, res) => {
     const id = req.params.idPlat;
-    const { nom, prix, details } = req.body;
+    const { nom, prix, details,photo} = req.body;
   
-    const sql = `UPDATE plat SET nom = ?, prix = ?, details = ? WHERE idPlat = ?`;
-    const data = [nom, prix, details, idPlat];
+    const sql = `UPDATE plat SET nom = ?, prix = ?, details = ? photo= ? WHERE idPlat = ?`;
+    const data = [ nom, prix, details, idPlat];
   
     pool.query(sql, data, (erreur, resultat) => {
       if (erreur) {

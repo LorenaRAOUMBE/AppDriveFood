@@ -9,7 +9,7 @@ router.get("/restaurant", (req, res) => {
       console.log(erreur);
       res.status(500).render("erreur", { erreur });
     } else {
-      res.status(200).json({ resultat });
+      res.status(200).send(resultat);
     }
   });
 });
@@ -24,7 +24,7 @@ router.get("/restaurant/:idRestaurant", (req, res) => {
       console.log(erreur);
       res.status(500).render("erreur", { erreur });
     } else {
-      res.status(200).json({ resultat });
+      res.status(200).send(resultat);
     }
   });
 });

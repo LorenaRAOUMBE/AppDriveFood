@@ -10,7 +10,7 @@ router.get("/commande", (req, res) => {
         console.log(erreur);
         res.status(500).render  ("erreur",{erreur});
       }else{
-        res.status(200).send({resultat });
+        res.status(200).send(resultat);
       }
     });
   });
@@ -26,7 +26,7 @@ router.get("/commande/:idCommande", (req, res) => {
       res.status(500).render("erreur", { erreur });
 
     } else {
-      res.status(200).json(resultat[0]); 
+      res.status(200).send(resultat[0]); 
     }
   });
 });
