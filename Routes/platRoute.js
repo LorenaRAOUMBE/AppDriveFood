@@ -1,4 +1,5 @@
 const express = require("express");
+const  pool = require("../config.bd/db"); 
 const router =express.Router();
 
 
@@ -33,7 +34,7 @@ router.get("/plat", (req, res) => {
 
   // creation nouveau plat dans la carte
 
-router.post("/plat", async (req, res) => {
+router.post("/plat", (req, res) => {
     const { idRestaurant, nom, prix, details } = req.body;
     const imageUrl = req.body.image;
 
@@ -47,7 +48,7 @@ router.post("/plat", async (req, res) => {
         } else {
            res.status(201).json({ message: "Plat ajouté avec succès", idPlat: resultat.insertId });     
         }        
-    });
+    })
   });
   
 
@@ -55,13 +56,13 @@ router.post("/plat", async (req, res) => {
   // pour modifier un plat
 
  
-router.put("/plat/:idPlat", async (req, res) => {
+router.put("/plat/:idPlat", (req, res) => {
     const idPlat = req.params.idPlat;
-    const { nom, prix, details } = req.body;
+    const { idRestaurant ,nom, prix, details } = req.body;
     let imageUrl =req.body.image ;
 
-    const sql = `UPDATE plat SET nom = ?, prix = ?, details = ?, image = ? WHERE idPlat = ?`;
-    const data = [nom, prix, details, imageUrl, idPlat];
+    const sql = `UPDATE plat SET idRestaurant= ? , nom = ?, prix = ?, details = ?, image = ? WHERE idPlat = ?`;
+    const data = [idRestaurant,nom, prix, details,imageUrl,idPlat];
    
         pool.query(sql, data, (erreur, resultat) => {
             if (erreur) {

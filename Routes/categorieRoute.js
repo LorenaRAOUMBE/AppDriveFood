@@ -1,5 +1,5 @@
 const express = require("express");
-const { pool} = require("../config.bd/db"); 
+const  pool = require("../config.bd/db"); 
 const router = express.Router();
 
 
@@ -36,7 +36,7 @@ router.get("/categorie/:idCategorie", (req, res) => {
 
 
 // 🔹 Ajouter  une catégorie
-router.post("/categorie",async(req, res) => {
+router.post("/categorie",(req, res) => {
     const categorie = req.body.categorie;
     const imageUrl = req.body.image;
 
@@ -52,21 +52,24 @@ router.post("/categorie",async(req, res) => {
 
 // pour modifier une categorie
 
-router.put("/categorie/:idCategorie", async (req, res) => {
+router.put("/categorie/:idCategorie",(req, res) => {
     const id = req.params.idCategorie;
     const categorie = req.body.categorie;
     let imageUrl = req.body.image;
 
+    let sql = "UPDATE categorie SET categorie = ?, image = ? WHERE idCategorie = ?";
+    let donnees = [categorie, imageUrl, id];
 
-           let sql = "UPDATE categorie SET categorie = ?, image = ? WHERE idCategorie = ?";
-           let donnees = [categorie, imageUrl, id];
-
-        const [resultat] = await pool.query(sql, donnees);
-
-        res.status(200).json({
+    pool.query(sql, donnees, (erreur, resultat) => {
+    if (erreur) {
+      console.log(erreur);
+      res.status(500).json({ erreur });
+    } else {
+    res.status(200).json({
             message: "Catégorie mise à jour"
         });
-
+    }  
+});   
 });
 // 🔹 Supprimer une catégorie
 
