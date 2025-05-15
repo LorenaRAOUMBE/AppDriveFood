@@ -46,6 +46,8 @@ app.get("/nouscontacter", (req, res) => {
   res.status(200).render("nouscontacter");
 });
 
+
+
 app.use((req, res) => {
   res.status(404).render("pageintrouvable");
 });
