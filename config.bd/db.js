@@ -2,14 +2,6 @@ require('dotenv').config();
 
 // Importation les modules nécessaires
 const mysql = require('mysql');
-const cloudinary = require('cloudinary').v2;
-
-// Configuration Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET
-});
 
 
 // Configuration et création du pool de la base de données
@@ -33,10 +25,5 @@ pool.getConnection((err, connection) => {
     connection.release(); 
 });
 
-// 5. Exportez tous les éléments nécessaires sous forme d'objet
-// Ceci permet aux autres fichiers de faire :
-// const { pool, cloudinary } = require('./chemin/vers/ceFichier');
-module.exports = {
-  pool,
-  cloudinary
-};
+module.exports =  pool
+;

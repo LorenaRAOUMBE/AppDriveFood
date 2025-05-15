@@ -1,8 +1,7 @@
 const express = require("express");
-const { pool, cloudinary } = require("../config.bd/db"); 
+const { pool} = require("../config.bd/db"); 
 const router = express.Router();
-const multer = require("multer");
-const upload=multer({storage:multer.memoryStorage()});
+
 
 //  Afficher toutes les catégories
 router.get("/categorie",(req, res) => {
