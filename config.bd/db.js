@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 // Importation les modules nécessaires
-const mysql = require('mysql2/promise');
+const mysql = require('mysql');
 const cloudinary = require('cloudinary').v2;
 
 // Configuration Cloudinary
@@ -10,6 +10,7 @@ cloudinary.config({
   api_key: process.env.API_KEY,
   api_secret: process.env.API_SECRET
 });
+
 
 // Configuration et création du pool de la base de données
 const optionBD = {

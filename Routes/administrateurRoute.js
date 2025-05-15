@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../config.bd/db");
+const { pool, cloudinary } = require("../config.bd/db"); 
 const router = express.Router();
 
 // Afficher tous les administrateurs
