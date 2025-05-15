@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 // Importation les modules nécessaires
-const mysql = require('mysql');
+const mysql = require('mysql2/promise');
 const cloudinary = require('cloudinary').v2;
 
 // Configuration Cloudinary
@@ -11,16 +11,15 @@ cloudinary.config({
   api_secret: process.env.API_SECRET
 });
 
-console.log('CLOUD_NAME:', process.env.CLOUD_NAME);
-console.log('API_KEY:', process.env.API_KEY);
-console.log('API_SECRET:', process.env.API_SECRET);
-
 // Configuration et création du pool de la base de données
 const optionBD = {
   host: 'srv1789.hstgr.io',
   user: 'u805707239_tchopshap',
   password: '@Tchopshap241',
   database: 'u805707239_sophie',
+  waitForConnections: true, 
+  connectionLimit: 10,     
+  queueLimit: 0 
 };
 const pool = mysql.createPool(optionBD);
 

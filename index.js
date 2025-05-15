@@ -54,7 +54,11 @@ app.use((req, res) => {
 
 
 // Demarrage du serveur
+const PORT = process.env.PORT || 3400;
 
-app.listen(3400, () => {
+app.listen(PORT, () => {
+    console.log(`Serveur démarré sur le port ${PORT} !`);
+});
+app.listen(PORT, () => {
   console.log("Serveur démarré (http://localhost:3400/) !");
 });
