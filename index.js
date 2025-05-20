@@ -2,6 +2,7 @@ const express = require("express");
 const pool= require('./config.bd/db');
 const router = express.Router();
 const cors = require("cors");
+const jwt= require("jsonwebtoken");
 
 const administrateurRoute=require("./Routes/administrateurRoute");
 const categorieRoute =require("./Routes/categorieRoute");
@@ -11,7 +12,7 @@ const platRoute =require('./Routes/platRoute');
 const restaurantRoute =require('./Routes/restaurantRoute');
 const clientRoute =require('./Routes/clientRoute');
 const commandeRoute =require('./Routes/commandeRoute');
-const jwt= require("jsonwebtoken");
+const authentificationRoute =require('./Routes/authentificationRoute');
 
 
 //  Création du serveur Express
@@ -30,6 +31,7 @@ app.set('views','IHM')
 
 // definitition des routes
 app.use(administrateurRoute);
+app.use(authentificationRoute);
 app.use(categorieRoute);
 app.use(clientRoute);
 app.use(commandeRoute);

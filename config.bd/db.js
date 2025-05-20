@@ -15,4 +15,4 @@ pool.getConnection(()=>{
 });
 
 // Exportation du pool de connexions pour l'utiliser dans d'autres fichiers
-module.exports = pool;
+module.exports = pool

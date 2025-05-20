@@ -1,5 +1,6 @@
-const express = require("express")
-const pool=require('../config.bd/db')
+const express = require("express");
+const pool=require('../config.bd/db');
+const bcrypt =require("bcrypt");
 const router =express.Router();
 
 //  Afficher les clients
@@ -35,11 +36,12 @@ router.get("/client/:idClient", (req, res) => {
   });
 });
   //  Ajouter d un client
-  router.post("/client", (req, res) => {
-    const { nom, prenom, numeroDeTel } = req.body;
+  router.post("/client", async(req, res) => {
+    const { nom, prenom, numeroDeTel,email, image,password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
   
-    const sql = "INSERT INTO client ( nom, prenom, numeroDeTel) VALUES(?,?,?)";
-    const data = [nom, prenom, numeroDeTel];
+    const sql = "INSERT INTO client ( nom, prenom, numeroDeTel,email, image,password) VALUES(?,?,?,?,?,?)";
+    const data = [nom, prenom, numeroDeTel,email, image, hashedPassword];
   
     pool.query(sql, data, (erreur, resultat) => {
       if (erreur) {
@@ -52,13 +54,14 @@ router.get("/client/:idClient", (req, res) => {
   });
 
 // Modifier un client
-router.put("/client/:idClient", (req, res) => { 
+router.put("/client/:idClient", async(req, res) => { 
   const id  = req.params.idClient;
-  const { nom, prenom, numeroDeTel } = req.body;
+  const { nom, prenom, numeroDeTel,email, image, password} = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const sql = ` UPDATE client SET nom = ?, prenom = ?, numeroDeTel = ? WHERE idClient = ? `;
+  const sql = ` UPDATE client SET nom = ?, prenom = ?, numeroDeTel = ?,email=?, image=?, password=? WHERE idClient = ? `;
 
-  const donnees = [nom, prenom, numeroDeTel, id];
+  const donnees = [nom, prenom, numeroDeTel,email,image,hashedPassword, id];
 
   pool.query(sql, donnees, (erreur, resultat) => {
       if (erreur) {

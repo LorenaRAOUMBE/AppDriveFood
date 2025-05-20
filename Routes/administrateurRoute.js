@@ -1,5 +1,6 @@
 const express = require("express");
-const  pool  = require("../config.bd/db"); 
+const pool = require("../config.bd/db");
+const bcrypt= require("bcrypt")
 const router = express.Router();
 
 // Afficher tous les administrateurs
@@ -31,11 +32,12 @@ router.get("/administrateur/:id", (req, res) => {
 
 
 // Créer un administrateur
-router.post("/administrateur", (req, res) => {
-  const { nom, prenom, email } = req.body;
+router.post("/administrateur", async(req, res) => {
+  const { nom, prenom, email,password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const sql = "INSERT INTO administrateur(nom, prenom, email) VALUES(?, ?, ?)";
-  const data = [nom, prenom, email];
+  const sql = "INSERT INTO administrateur(nom, prenom, email,password) VALUES(?, ?, ?,?)";
+  const data = [nom, prenom, email,hashedPasswordpassword];
 
   pool.query(sql, data, (erreur, resultat) => {
     if (erreur) {
@@ -48,12 +50,13 @@ router.post("/administrateur", (req, res) => {
 });
 
 // Modifier un administrateur
-router.put("/administrateur/:id", (req, res) => {
+router.put("/administrateur/:id",async(req, res) => {
   const { id } = req.params;
-  const { nom, prenom, email } = req.body;
+  const { nom, prenom, email,password} = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const sql = "UPDATE administrateur SET nom = ?, prenom = ?, email = ? WHERE id = ?";
-  const data = [nom, prenom, email, id];
+  const sql = "UPDATE administrateur SET nom = ?, prenom = ?, email = ? ,password= ? WHERE id = ?";
+  const data = [nom, prenom, email,hashedPassword, id];
 
   pool.query(sql, data, (erreur, resultat) => {
     if (erreur) {
