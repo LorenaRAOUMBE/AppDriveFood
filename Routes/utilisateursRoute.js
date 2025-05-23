@@ -6,7 +6,7 @@ const router =express.Router();
 //  Afficher les utilisateurs
 
 router.get("/utilisateurs", (req, res) => {
-    pool.query( "SELECT idUtilisateur, nom, numeroDeTel, email, role, image, verifie FROM utilisateurs",(erreur, resultat)=>{
+    pool.query( "SELECT idUtilisateur, nom, numeroDeTel, email,password ,role, image,OTP, verifie FROM utilisateurs",(erreur, resultat)=>{
       if(erreur){
         console.log(erreur);
         res.status(500).render  ("erreur",{erreur});
@@ -20,7 +20,7 @@ router.get("/utilisateurs", (req, res) => {
 
 router.get("/utilisateurs/:idUtilisateur", (req, res) => {
   const id = req.params.idUtilisateur;
-  const sql = "SELECT idUtilisateur, nom, numeroDeTel, email, role, image, verifie FROM utilisateurs";
+  const sql = "SELECT idUtilisateur, nom, numeroDeTel, email,password ,role, image,OTP, verifie FROM utilisateurs";
 
   pool.query(sql, [id], (erreur, resultat) => {
       if (erreur) {

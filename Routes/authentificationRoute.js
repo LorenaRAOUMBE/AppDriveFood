@@ -110,15 +110,10 @@ router.post('/verify-otp', async (req, res) => {
 
         const user = result[0];
 
-        // Vérifie si un OTP a été généré et s'il correspond à celui saisi
-        if (!user.OTP || user.OTP !== enteredOtp) {
-            return res.status(401).json({ message: 'Code OTP incorrect.' });
-        }
-
         // Vérifie l'expiration de l'OTP
         const otpExpiresAt = new Date(user.otp_expires_at);
         if (Date.now() > otpExpiresAt.getTime()) {
-            // Efface l'OTP expiré de la base de données (optionnel mais recommandé)
+            // Efface l'OTP expiré de la base de données 
             pool.query('UPDATE utilisateurs SET OTP = NULL, otp_expires_at = NULL WHERE idUtilisateur = ?', [user.idUtilisateur], (clearErr) => {
                 if (clearErr) console.error("Erreur lors de l'effacement de l'OTP expiré:", clearErr);
             });
@@ -139,34 +134,34 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 
-// --- Route pour la vérification de l'e-mail (après clic sur un lien de vérification) ---
-// Cette route est protégée, nécessitant un jeton JWT valide pour y accéder.
-router.post('/verify-email', async (req, res) => {
-    const userId = req.user.idUtilisateur; 
+// // --- Route pour la vérification de l'e-mail  ---
+// // Cette route est protégée, nécessitant un jeton JWT valide pour y accéder.
+// router.post('/verify-email', async (req, res) => {
+//     const userId = req.user.idUtilisateur; 
 
-    // Vérifie si l'utilisateur est déjà vérifié avant de tenter la mise à jour
-    pool.query('SELECT verifie FROM utilisateurs WHERE idUtilisateur = ?', [userId], (err, result) => {
-        if (err) {
-            console.error("Erreur lors de la vérification du statut email:", err);
-            return res.status(500).json({ message: "Une erreur interne est survenue." });
-        }
-        if (result.length === 0) {
-            return res.status(404).json({ message: "Utilisateur non trouvé." });
-        }
-        if (result[0].verifie) {
-            return res.status(400).json({ message: 'Votre compte est déjà vérifié.' });
-        }
+//     // Vérifie si l'utilisateur est déjà vérifié avant de tenter la mise à jour
+//     pool.query('SELECT verifie FROM utilisateurs WHERE idUtilisateur = ?', [userId], (err, result) => {
+//         if (err) {
+//             console.error("Erreur lors de la vérification du statut email:", err);
+//             return res.status(500).json({ message: "Une erreur interne est survenue." });
+//         }
+//         if (result.length === 0) {
+//             return res.status(404).json({ message: "Utilisateur non trouvé." });
+//         }
+//         if (result[0].verifie) {
+//             return res.status(400).json({ message: 'Votre compte est déjà vérifié.' });
+//         }
 
-        // Met à jour le statut 'verifie' de l'utilisateur à TRUE
-        pool.query('UPDATE utilisateurs SET verifie = TRUE WHERE idUtilisateur = ?', [userId], (updateErr, updateResult) => {
-            if (updateErr) {
-                console.error("Erreur lors de la mise à jour de la vérification de l'email:", updateErr);
-                return res.status(500).json({ message: "Une erreur est survenue lors de la vérification de l'email." });
-            }
-            res.json({ message: 'Votre adresse e-mail a été vérifiée avec succès!' });
-        });
-    });
-});
+//         // Met à jour le statut 'verifie' de l'utilisateur à TRUE
+//         pool.query('UPDATE utilisateurs SET verifie = TRUE WHERE idUtilisateur = ?', [userId], (updateErr, updateResult) => {
+//             if (updateErr) {
+//                 console.error("Erreur lors de la mise à jour de la vérification de l'email:", updateErr);
+//                 return res.status(500).json({ message: "Une erreur est survenue lors de la vérification de l'email." });
+//             }
+//             res.json({ message: 'Votre adresse e-mail a été vérifiée avec succès!' });
+//         });
+//     });
+// });
 
 // --- Route pour la connexion de l'utilisateur ---
 
