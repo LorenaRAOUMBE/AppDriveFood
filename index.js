@@ -4,13 +4,12 @@ const router = express.Router();
 const cors = require("cors");
 const jwt= require("jsonwebtoken");
 
-const administrateurRoute=require("./Routes/administrateurRoute");
+const utilisateursRoute=require("./Routes/utilisateursRoute")
 const categorieRoute =require("./Routes/categorieRoute");
 const livraisonRoute =require('./Routes/livraisonRoute');
 const livreurRoute =require('./Routes/livreurRoute');
 const platRoute =require('./Routes/platRoute');
 const restaurantRoute =require('./Routes/restaurantRoute');
-const clientRoute =require('./Routes/clientRoute');
 const commandeRoute =require('./Routes/commandeRoute');
 const authentificationRoute =require('./Routes/authentificationRoute');
 
@@ -25,15 +24,15 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+
 // Definition du moteur d affichage
 app.set("view engine","ejs")
 app.set('views','IHM')
 
 // definitition des routes
-app.use(administrateurRoute);
 app.use(authentificationRoute);
+app.use(utilisateursRoute);
 app.use(categorieRoute);
-app.use(clientRoute);
 app.use(commandeRoute);
 app.use(livreurRoute);
 app.use(livraisonRoute);

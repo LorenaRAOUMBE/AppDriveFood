@@ -20,7 +20,7 @@ router.get("/commande", (req, res) => {
 router.get("/commande/:idCommande", (req, res) => {
   const id = req.params.idCommande ;
 
-  pool.query("SELECT * FROM Commande WHERE idCommande = ?", [id], (erreur, resultat) => {
+  pool.query("SELECT * FROM commande WHERE idCommande = ?", [id], (erreur, resultat) => {
     if (erreur) {
       console.log(erreur);
       res.status(500).render("erreur", { erreur });
@@ -35,11 +35,12 @@ router.get("/commande/:idCommande", (req, res) => {
 
   router.post("/commande", (req, res) => {
 
-      const { idClient, idPlat, statut, modeDepaiement,date_com} = req.body;
+      const { idUtilisateur, idPlat, modeDepaiement,date_com} = req.body;
+      const statut =req.body.statut||'en préparation'
     
-    let reqsql = "INSERT INTO commande ( idClient, idPlat, statut, modeDePaiement,date_com) VALUES ( ?, ?, ?, ?, ?)"; 
+    let reqsql = "INSERT INTO commande ( idUtilisateur, idPlat, statut, modeDePaiement,date_com) VALUES ( ?, ?, ?, ?, ?)"; 
 
-    let donnees = [ idClient, idPlat, statut, modeDePaiement, date_com];
+    let donnees = [ idUtilisateur, idPlat, statut, modeDePaiement, date_com];
 
     pool.query(reqsql, donnees, (erreur, resultat) => {
         if (erreur) {
@@ -55,18 +56,18 @@ router.get("/commande/:idCommande", (req, res) => {
 
 router.put("/commande/:idCommande", (req, res) => {
   const idCommande= req.params.idCommande;
-  const { idClient, idPlat, statut, modeDePaiement, date_com } = req.body;
+  const statut = req.body.statut;
 
-  const sql = "UPDATE Commande SET idClient = ?, idPlat = ?, Statut = ?, modeDepaiement = ?, date_com = ? WHERE idCommande = ?";
+  const sql = "UPDATE commande SET Statut = ? WHERE idCommande = ?";
 
-  const donnees  = [idClient, idPlat, statut, modeDePaiement, date_com, idCommande];
+  const donnees  = [statut, idCommande];
 
   pool.query(sql, donnees, (erreur, resultat) => {
     if (erreur) {
       console.log(erreur);
       res.status(500).render("erreur", { erreur });
     } else {
-      res.status(200).json({ message: "Commande modifiée avec succès" });
+      res.status(200).json({ message: "Statut commande modifiée avec succès" });
     }
   });
 });
@@ -75,7 +76,7 @@ router.put("/commande/:idCommande", (req, res) => {
 router.delete("/commande/:idCommande", (req, res) => {
   const id = req.params.idCommande;
 
-  pool.query("DELETE FROM Commande WHERE idCommande = ?", [id], (erreur, resultat) => {
+  pool.query("DELETE FROM commande WHERE idCommande = ?", [id], (erreur, resultat) => {
     if (erreur) {
       console.log(erreur);
       res.status(500).render("erreur", { erreur });
