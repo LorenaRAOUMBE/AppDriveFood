@@ -6,7 +6,7 @@ const router =express.Router();
 //  Afficher les utilisateurs
 
 router.get("/utilisateurs", (req, res) => {
-    pool.query( "SELECT idUtilisateur, nom, numeroDeTel, email,password ,role, image,OTP, verifie FROM utilisateurs",(erreur, resultat)=>{
+    pool.query( "SELECT * FROM utilisateurs",[], (erreur, resultat)=>{
       if(erreur){
         console.log(erreur);
         res.status(500).render  ("erreur",{erreur});
@@ -20,7 +20,7 @@ router.get("/utilisateurs", (req, res) => {
 
 router.get("/utilisateurs/:idUtilisateur", (req, res) => {
   const id = req.params.idUtilisateur;
-  const sql = "SELECT idUtilisateur, nom, numeroDeTel, email,password ,role, image,OTP, verifie FROM utilisateurs";
+  const sql ="SELECT * FROM utilisateurs WHERE idUtilisateur = ?";
 
   pool.query(sql, [id], (erreur, resultat) => {
       if (erreur) {
@@ -43,7 +43,7 @@ router.get("/utilisateurs/:idUtilisateur", (req, res) => {
     const verifie=req.body.verifie||"FALSE";
   
     const sql = "INSERT INTO utilisateurs ( nom,numeroDeTel, email,password ,role, image,verifie) VALUES(?,?,?,?,?,?,?)";
-    const data = [ nom,numeroDeTel, email,hashedPassword,role, image];
+    const data = [ nom,numeroDeTel, email,hashedPassword,role, image,verifie];
   
     pool.query(sql, data, (erreur, resultat) => {
       if (erreur) {
@@ -58,13 +58,13 @@ router.get("/utilisateurs/:idUtilisateur", (req, res) => {
 // Modifier un utilisateur
 router.put("/utilisateurs/:idUtilisateur", async(req, res) => { 
   const id  = req.params.idUtilisateur;
-  const {nom, numeroDeTel, email, password, role} = req.body;
+  const {nom, numeroDeTel, email, password, role,verifie} = req.body;
   const image=req.body.image||null;
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const sql = ` UPDATE utilisateurs SET nom = ?, numeroDeTel = ?,email =?, password =?,role = ?,image=? WHERE idUtilisateur = ? `;
+  const sql = ` UPDATE utilisateurs SET nom = ?, numeroDeTel = ?,email =?, password =?,role = ?,image=? ,verifie=? WHERE idUtilisateur = ? `;
 
-  const donnees = [nom, numeroDeTel, email, hashedPassword , role, image, id];
+  const donnees = [nom, numeroDeTel, email, hashedPassword , role, image,verifie, id];
 
   pool.query(sql, donnees, (erreur, resultat) => {
       if (erreur) {

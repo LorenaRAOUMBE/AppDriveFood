@@ -61,7 +61,7 @@ router.post("/inscription", async (req, res) => {
             // Récupère l'ID du nouvel utilisateur inséré pour l'OTP
             const userId = result.insertId; 
 
-            // AUTHENTIFICATION À DEUX ÉTAPES : ÉTAPE 1 (Génération et envoi de l'OTP)
+            // AGénération et envoi de l'OTP
             const otpCode = Math.floor(1000 + Math.random() * 9000).toString(); 
 
             // Met à jour l'utilisateur avec l'OTP et sa date d'expiration (5 minutes)
@@ -93,75 +93,6 @@ router.post("/inscription", async (req, res) => {
         });
 });
 
-// --- Route pour la vérification OTP (Deuxième étape de l'authentification) ---
-router.post('/verify-otp', async (req, res) => {
-    const { email, enteredOtp } = req.body;
-
-    // Recherche l'utilisateur par e-mail pour vérifier l'OTP
-    pool.query('SELECT idUtilisateur, nom, email, role, verifie, OTP, otp_expires_at FROM utilisateurs WHERE email = ?', [email], (err, result) => {
-        if (err) {
-            console.error("Erreur lors de la recherche de l'utilisateur pour l'OTP:", err);
-            return res.status(500).json({ message: "Une erreur interne est survenue." });
-        }
-
-        if (result.length === 0) {
-            return res.status(404).json({ message: "Utilisateur non trouvé." });
-        }
-
-        const user = result[0];
-
-        // Vérifie l'expiration de l'OTP
-        const otpExpiresAt = new Date(user.otp_expires_at);
-        if (Date.now() > otpExpiresAt.getTime()) {
-            // Efface l'OTP expiré de la base de données 
-            pool.query('UPDATE utilisateurs SET OTP = NULL, otp_expires_at = NULL WHERE idUtilisateur = ?', [user.idUtilisateur], (clearErr) => {
-                if (clearErr) console.error("Erreur lors de l'effacement de l'OTP expiré:", clearErr);
-            });
-            return res.status(401).json({ message: 'Code OTP expiré. Veuillez vous reconnecter pour en générer un nouveau.' });
-        }
-
-        // OTP vérifié avec succès : Efface l'OTP de la base de données pour qu'il ne puisse pas être réutilisé
-        pool.query('UPDATE utilisateurs SET OTP = NULL, otp_expires_at = NULL, verifie = TRUE WHERE idUtilisateur = ?', [user.idUtilisateur], (clearErr) => {
-            if (clearErr) console.error("Erreur lors de l'effacement de l'OTP après vérification:", clearErr);
-
-            res.status(200).json({
-                message: "Code OTP vérifié avec succès. Authentification réussie!",
-                role: user.role,
-                verified: true
-            });
-        });
-    });
-});
-
-
-// // --- Route pour la vérification de l'e-mail  ---
-// // Cette route est protégée, nécessitant un jeton JWT valide pour y accéder.
-// router.post('/verify-email', async (req, res) => {
-//     const userId = req.user.idUtilisateur; 
-
-//     // Vérifie si l'utilisateur est déjà vérifié avant de tenter la mise à jour
-//     pool.query('SELECT verifie FROM utilisateurs WHERE idUtilisateur = ?', [userId], (err, result) => {
-//         if (err) {
-//             console.error("Erreur lors de la vérification du statut email:", err);
-//             return res.status(500).json({ message: "Une erreur interne est survenue." });
-//         }
-//         if (result.length === 0) {
-//             return res.status(404).json({ message: "Utilisateur non trouvé." });
-//         }
-//         if (result[0].verifie) {
-//             return res.status(400).json({ message: 'Votre compte est déjà vérifié.' });
-//         }
-
-//         // Met à jour le statut 'verifie' de l'utilisateur à TRUE
-//         pool.query('UPDATE utilisateurs SET verifie = TRUE WHERE idUtilisateur = ?', [userId], (updateErr, updateResult) => {
-//             if (updateErr) {
-//                 console.error("Erreur lors de la mise à jour de la vérification de l'email:", updateErr);
-//                 return res.status(500).json({ message: "Une erreur est survenue lors de la vérification de l'email." });
-//             }
-//             res.json({ message: 'Votre adresse e-mail a été vérifiée avec succès!' });
-//         });
-//     });
-// });
 
 // --- Route pour la connexion de l'utilisateur ---
 
