@@ -95,7 +95,7 @@ router.post("/connexion", async (req, res) => {
                     return res.status(500).json({ message: "Une erreur est survenue lors de la génération de l'OTP." });
                 }
                 console.log(`OTP généré pour l'utilisateur ${user.email}: ${otpCode}`);
-
+            
                 transporter.sendMail({
                     from: process.env.EMAIL_USER,
                     to: user.email,
