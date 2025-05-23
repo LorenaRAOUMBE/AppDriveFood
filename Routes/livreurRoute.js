@@ -34,7 +34,8 @@ router.get("/livreur", (req, res) => {
 // creer un un bd livreur 
 
 router.post("/livreur", (req, res) => {
-  const { nom, prenom, statut, typeDeVehicule, numeroDeTel } = req.body;
+  const { nom, prenom,typeDeVehicule, numeroDeTel } = req.body;
+   const statut = req.body.statut||"disponible";
 
   const sql = `INSERT INTO livreur (nom, prenom, statut, typeDeVehicule, numeroDeTel)
     VALUES (?, ?, ?, ?, ?)`;
