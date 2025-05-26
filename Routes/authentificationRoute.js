@@ -118,10 +118,11 @@ router.post("/connexion", async (req, res) => {
 
         // Génère un jeton JWT pour l'utilisateur authentifié
         const token = jwt.sign(
-            { id: user.idUtilisateur, nom :user.idUtilisateur.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verified: user.verifie },
-            JWT_SECRET,
+            { id: user.idUtilisateur, nom :user.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verified: user.verifie },
+            process.env.JWT_SECRET,
             { expiresIn: "2h" } 
         );
+        
          res.status(200).json({
             message: "Connexion réussie.",
             token: token,
