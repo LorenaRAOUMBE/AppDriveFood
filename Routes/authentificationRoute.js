@@ -131,8 +131,6 @@ router.post("/connexion", async (req, res) => {
     console.log("Email reçu:", email);
     console.log("Mot de passe reçu (texte clair, NE PAS LOGUER EN PRODUCTION):", password);  
 
-
-
     pool.query("SELECT idUtilisateur, nom, numeroDeTel, email, password, role, image, verifie FROM utilisateurs WHERE email = ?", [email], async (err, result) => {
         if (err) {
             console.error("Erreur lors de la recherche de l'utilisateur:", err);
@@ -145,24 +143,13 @@ router.post("/connexion", async (req, res) => {
         }
 
         const user = result[0];
-        console.log("Utilisateur trouvé dans la BDD (sans le mot de passe haché pour sécurité) :", {
-            idUtilisateur: user.idUtilisateur,
-            nom: user.nom,
-            email: user.email,
-            role: user.role,
-            verifie: user.verifie
-        });
-        console.log("Mot de passe HACHÉ de la BDD pour comparaison:", user.password); // Loguer le hachage de la BDD pour vérifier sa forme
 
         const match = await bcrypt.compare(password, user.password); // Comparaison cruciale
-
-        console.log("Résultat de la comparaison bcrypt.compare:", match);
 
         if (!match) {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
 
-        // ... (le reste de votre code de connexion)
         const token = jwt.sign(
             { id: user.idUtilisateur, nom :user.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verifie: user.verifie },
             JWT_SECRET,

@@ -13,18 +13,12 @@ const restaurantRoute =require('./Routes/restaurantRoute');
 const commandeRoute =require('./Routes/commandeRoute');
 const authentificationRoute =require('./Routes/authentificationRoute');
 
-
-
-
-
 //  Création du serveur Express
 const app = express();
 
 // Definition du middleware pour connexion
 
-app.use(cors({
-  origin: 'http://localhost:3000' // ou http://localhost:5173 pour Vite
-}));
+app.use(cors());
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
