@@ -18,7 +18,9 @@ const app = express();
 
 // Definition du middleware pour connexion
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000' // ou http://localhost:5173 pour Vite
+}));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());

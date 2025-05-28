@@ -84,16 +84,14 @@ router.post("/inscription", async (req, res) => {
                     }).catch(mailErr => console.error("Erreur d'envoi d'e-mail OTP:", mailErr));
 
                     // Répond au client que l'inscription est réussie et qu'une vérification OTP est nécessaire
-                 const token = jwt.sign(
-                 { id: user.idUtilisateur, email: user.email, role: user.role, verifie: user.verifie },
-                 JWT_SECRET,
-                 { expiresIn: "2h" }
-        );
-
-        res.status(200).json({ message: "Authentification 2FA réussie!", token: token, role: user.role });
-    });
+                    res.status(201).json({ 
+                        message: "Inscription réussie. Un code OTP a été envoyé à votre e-mail. Veuillez le saisir pour finaliser la connexion.",
+                        requiresOtpVerification: true,
+                        email: email 
+                    });
                 });
         });
+});
 
 // verification otp
 
@@ -109,14 +107,20 @@ router.post("/verifier-otp", async (req, res) => {
     const currentTime = new Date();
 
     if (String(user.OTP) === String(otp) && new Date(user.otp_expires_at) > currentTime) {
+        
       // Mise à jour pour marquer l'utilisateur comme vérifié
       pool.query("UPDATE utilisateurs SET verifie = 'TRUE' WHERE idUtilisateur = ?", [user.idUtilisateur], (updateErr) => {
         if (updateErr) {
           return res.status(500).json({ message: "Erreur lors de la mise à jour de vérification." });
         }
+        const token = jwt.sign(
+            { id: user.idUtilisateur, email: user.email, role: user.role, verifie: user.verifie },
+            JWT_SECRET,
+            { expiresIn: "2h" }
+        );
 
-        return res.status(200).json({ message: "OTP vérifié avec succès.", role: user.role });
-      });
+        res.status(200).json({ message: "Authentification 2FA réussie!", token: token, role: user.role });
+    });
     } else {
       return res.status(400).json({ message: "OTP incorrect ou expiré" });
 }
@@ -126,10 +130,6 @@ router.post("/verifier-otp", async (req, res) => {
 // --- Route pour la connexion de l'utilisateur ---
 router.post("/connexion", async (req, res) => {
     const { email, password } = req.body; // 'password' ici est le mot de passe en texte clair envoyé par le frontend
-
-    console.log("--- Tentative de connexion ---");
-    console.log("Email reçu:", email);
-    console.log("Mot de passe reçu (texte clair, NE PAS LOGUER EN PRODUCTION):", password);  
 
     pool.query("SELECT idUtilisateur, nom, numeroDeTel, email, password, role, image, verifie FROM utilisateurs WHERE email = ?", [email], async (err, result) => {
         if (err) {
@@ -143,8 +143,10 @@ router.post("/connexion", async (req, res) => {
         }
 
         const user = result[0];
-
+    
         const match = await bcrypt.compare(password, user.password); // Comparaison cruciale
+
+        console.log("Résultat de la comparaison bcrypt.compare:", match);
 
         if (!match) {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
