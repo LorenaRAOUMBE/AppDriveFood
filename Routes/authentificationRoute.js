@@ -93,44 +93,87 @@ router.post("/inscription", async (req, res) => {
         });
 });
 
+// verification otp
+
+router.post("/verifier-otp", async (req, res) => {
+  const { email, otp } = req.body;
+
+  pool.query("SELECT * FROM utilisateurs WHERE email = ?", [email], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    const user = results[0];
+    const currentTime = new Date();
+
+    if (String(user.OTP) === String(otp) && new Date(user.otp_expires_at) > currentTime) {
+      // Mise à jour pour marquer l'utilisateur comme vérifié
+      pool.query("UPDATE utilisateurs SET verifie = 'TRUE' WHERE idUtilisateur = ?", [user.idUtilisateur], (updateErr) => {
+        if (updateErr) {
+          return res.status(500).json({ message: "Erreur lors de la mise à jour de vérification." });
+        }
+
+        return res.status(200).json({ message: "OTP vérifié avec succès.", role: user.role });
+      });
+    } else {
+      return res.status(400).json({ message: "OTP incorrect ou expiré" });
+}
+});
+});
 
 // --- Route pour la connexion de l'utilisateur ---
-
 router.post("/connexion", async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body; // 'password' ici est le mot de passe en texte clair envoyé par le frontend
 
-    // Recherche l'utilisateur par e-mail dans la base de données
-    pool.query("SELECT idUtilisateur, nom, numeroDeTel, email,password ,role, image, verifie  FROM utilisateurs WHERE email = ?", [email], async (err, result) => {
+    console.log("--- Tentative de connexion ---");
+    console.log("Email reçu:", email);
+    console.log("Mot de passe reçu (texte clair, NE PAS LOGUER EN PRODUCTION):", password);  
+
+
+
+    pool.query("SELECT idUtilisateur, nom, numeroDeTel, email, password, role, image, verifie FROM utilisateurs WHERE email = ?", [email], async (err, result) => {
         if (err) {
             console.error("Erreur lors de la recherche de l'utilisateur:", err);
             return res.status(500).json({ message: "Une erreur interne est survenue." });
         }
 
         if (result.length === 0) {
+            console.log(`Utilisateur avec l'email "${email}" non trouvé.`);
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
+
         const user = result[0];
-        const match = await bcrypt.compare(password, user.password);
+        console.log("Utilisateur trouvé dans la BDD (sans le mot de passe haché pour sécurité) :", {
+            idUtilisateur: user.idUtilisateur,
+            nom: user.nom,
+            email: user.email,
+            role: user.role,
+            verifie: user.verifie
+        });
+        console.log("Mot de passe HACHÉ de la BDD pour comparaison:", user.password); // Loguer le hachage de la BDD pour vérifier sa forme
+
+        const match = await bcrypt.compare(password, user.password); // Comparaison cruciale
+
+        console.log("Résultat de la comparaison bcrypt.compare:", match);
 
         if (!match) {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
 
-        // Génère un jeton JWT pour l'utilisateur authentifié
+        // ... (le reste de votre code de connexion)
         const token = jwt.sign(
-            { id: user.idUtilisateur, nom :user.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verified: user.verifie },
-            process.env.JWT_SECRET,
-            { expiresIn: "2h" } 
+            { id: user.idUtilisateur, nom :user.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verifie: user.verifie },
+            JWT_SECRET,
+            { expiresIn: "2h" }
         );
-        
-         res.status(200).json({
+
+        res.status(200).json({
             message: "Connexion réussie.",
             token: token,
-            userId: user.idUtilisateur,
+             userId: user.idUtilisateur,
             role: user.role,
             verified: user.verifie
         });
-        
     });
 });
 
