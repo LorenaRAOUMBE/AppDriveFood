@@ -84,14 +84,16 @@ router.post("/inscription", async (req, res) => {
                     }).catch(mailErr => console.error("Erreur d'envoi d'e-mail OTP:", mailErr));
 
                     // Répond au client que l'inscription est réussie et qu'une vérification OTP est nécessaire
-                    res.status(201).json({ 
-                        message: "Inscription réussie. Un code OTP a été envoyé à votre e-mail. Veuillez le saisir pour finaliser la connexion.",
-                        requiresOtpVerification: true,
-                        email: email 
-                    });
+                 const token = jwt.sign(
+                 { id: user.idUtilisateur, email: user.email, role: user.role, verifie: user.verifie },
+                 JWT_SECRET,
+                 { expiresIn: "2h" }
+        );
+
+        res.status(200).json({ message: "Authentification 2FA réussie!", token: token, role: user.role });
+    });
                 });
         });
-});
 
 // verification otp
 
