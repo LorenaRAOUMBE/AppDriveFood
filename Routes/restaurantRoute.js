@@ -32,9 +32,9 @@ router.get("/restaurant/:idRestaurant", (req, res) => {
 // Requête pour l'insertion d'un nouveau restaurant
 
 router.post("/restaurant", (req, res) => {
-  const { idCategorie, nom, adresse,image } = req.body;  
-  const reqsql = "INSERT INTO restaurant (idCategorie, nom, adresse,image) VALUES (?, ?, ?,?)";
-  const donnees = [idCategorie, nom, adresse,image];
+  const { idCategorie, nom, adresse,image,idUtilisateur} = req.body;  
+  const reqsql = "INSERT INTO restaurant (idCategorie, nom, adresse,image,idUtilisateur) VALUES (?, ?, ?,?,?)";
+  const donnees = [idCategorie, nom, adresse,image,idUtilisateur];
 
   pool.query(reqsql, donnees, (erreur, resultat) => {
     if (erreur) {
@@ -49,9 +49,9 @@ router.post("/restaurant", (req, res) => {
 // Mise à jour d'un restaurant
 
 router.put("/restaurant/:idRestaurant", (req, res) => {
-  const { idRestaurant, idCategorie, nom, adresse,image} = req.body;  
-  const reqsql = "UPDATE restaurant SET idCategorie = ?, nom = ?, adresse = ? ,image=? WHERE idRestaurant = ?";
-  const donnees = [idCategorie, nom, adresse,image, idRestaurant];
+  const {  idCategorie, nom, adresse,image,idUtilisateur} = req.body;  
+  const reqsql = "UPDATE restaurant SET idCategorie = ?, nom = ?, adresse = ? ,image=?, idUtilisateur=? WHERE idRestaurant = ?";
+  const donnees = [idCategorie, nom, adresse,image,idUtilisateur, idRestaurant];
 
   pool.query(reqsql, donnees, (erreur, resultat) => {
     if (erreur) {

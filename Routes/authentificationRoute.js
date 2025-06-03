@@ -119,7 +119,7 @@ router.post("/verifier-otp", async (req, res) => {
             { expiresIn: "2h" }
         );
 
-        res.status(200).json({ message: "Authentification 2FA réussie!", token: token, role: user.role });
+        res.status(200).json({ message: "Authentification 2FA réussie!", IdUtilisateur:user.idUtilisateur, token: token, role: user.role });
     });
     } else {
       return res.status(400).json({ message: "OTP incorrect ou expiré" });
