@@ -12,17 +12,23 @@ const platRoute =require('./Routes/platRoute');
 const restaurantRoute =require('./Routes/restaurantRoute');
 const commandeRoute =require('./Routes/commandeRoute');
 const authentificationRoute =require('./Routes/authentificationRoute');
-
+const bodyParser = require('body-parser');
 //  Création du serveur Express
 const app = express();
 
 // Definition du middleware pour connexion
 
 app.use(cors({
-  origin: 'http://localhost:3000' // ou http://localhost:5173 pour Vite
+  origin: 'https://tchopshap-react.vercel.app/' 
 }));
 
 app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 app.use(express.json());
 
 
