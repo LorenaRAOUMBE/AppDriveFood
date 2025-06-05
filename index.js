@@ -18,9 +18,7 @@ const app = express();
 
 // Definition du middleware pour connexion
 
-app.use(cors({
-  origin: 'https://tchopshap-react.vercel.app/' 
-}));
+app.use(cors());
 
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
