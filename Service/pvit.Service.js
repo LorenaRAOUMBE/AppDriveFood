@@ -1,6 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
-const qs = require('qs')
+const qs = require('qs');
+const router = express.Router();
 
 const PVIT_BASE_URL = process.env.PVIT_BASE_URL;
 const PVIT_ACCOUNT_ID = process.env.PVIT_ACCOUNT_ID; // Votre ID de compte PVit
@@ -16,6 +17,29 @@ router.post("api/payment/secret-callback",(req,res)=>{
 
     console.log("cle secrete recu :", secret_key);
     
+    async function renewSecretKey(operationAccountCode, receptionUrlCode, renewalPassword, renewSecretCodeURL) {
+        try {
+            const data = {
+                operationAccountCode: ACC_683486FC89758,
+                receptionUrlCode: "R5F6W",
+                password: process.env.PASSWORD        
+            };
+    
+            // Effectue un appel axios direct (pas via pvitApi) car les headers et le body diffèrent.
+            const response = await axios.post("/WPORYY2HIGCKDZWX/renew-secret", qs.stringify(data), // Encode les données en x-www-form-urlencoded
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            );
+            console.log('Réponse PVit - Renew Secret:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Erreur lors du renouvellement de la clé secrète PVit:', error.response ? error.response.data : error.message);
+            throw error;
+        }
+    }
 })
 
 // Création d'une instance Axios préconfigurée pour les appels API PVit
@@ -91,33 +115,11 @@ async function getTransactionStatus(transactionId) {
 //     }
 // }
 
-async function renewSecretKey(operationAccountCode, receptionUrlCode, renewalPassword, renewSecretCodeURL) {
-    try {
-        const data = {
-            operationAccountCode: ACC_683486FC89758,
-            receptionUrlCode: "R5F6W",
-            password: process.env.PASSWORD        
-        };
-
-        // Effectue un appel axios direct (pas via pvitApi) car les headers et le body diffèrent.
-        const response = await axios.post("/WPORYY2HIGCKDZWX/renew-secret", qs.stringify(data), // Encode les données en x-www-form-urlencoded
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
-        console.log('Réponse PVit - Renew Secret:', response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Erreur lors du renouvellement de la clé secrète PVit:', error.response ? error.response.data : error.message);
-        throw error;
-    }
-}
 
 
 module.exports = {
     initiateTransaction,
     getTransactionStatus,
-    renewSecretKey
+    renewSecretKey,
+    router
 };
