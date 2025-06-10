@@ -42,8 +42,55 @@ router.post("/api/payment/secret-callback", (req, res) => {
     }
 });
 
+router.post('/api/renew-secret', async (req, res) => {
+    try {
+        // Récupération des variables d'environnement
+        const operationAccountCode = process.env.PVIT_ACCOUNT_ID;
+        const receptionUrlCode = process.env.CODEURLCALLBACKKEY;
+        const password = process.env.PASSWORD;
 
+        // Vérification des variables d'environnement requises
+        if (!operationAccountCode || !receptionUrlCode || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Configuration manquante. Vérifiez vos variables d\'environnement.'
+            });
+        }
 
+        // Construction des données pour la requête
+        const formData = {
+            operationAccountCode,
+            receptionUrlCode,
+            password
+        };
+
+        // Appel à l'API PVit pour renouveler la clé secrète
+        const response = await axios.post(
+            `${process.env.PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
+            qs.stringify(formData),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        console.log('Renouvellement de la clé secrète réussi :' +cachedSecretKey);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Demande de renouvellement de clé secrète envoyée avec succès'
+        });
+
+    } catch (error) {
+        console.error('Erreur lors du renouvellement de la clé secrète:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors du renouvellement de la clé secrète',
+            error: error.response?.data || error.message
+        });
+    }
+});
 
 
 // Export des fonctions et du router
