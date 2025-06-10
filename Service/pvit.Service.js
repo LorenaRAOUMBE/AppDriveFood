@@ -34,8 +34,7 @@ router.post("/api/payment/secret-callback", (req, res) => {
         }
         
         cachedSecretKey = secret_key;
-        console.log("Clé secrète reçue");
-        
+        console.log("Clé secrète reçue :"+secret_key)
         res.status(200).json({ message: 'Clé secrète mise à jour avec succès' });
     } catch (error) {
         console.error('Erreur lors de la mise à jour de la clé secrète:', error);
