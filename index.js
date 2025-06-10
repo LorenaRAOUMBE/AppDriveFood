@@ -16,6 +16,8 @@ const restaurantRoute = require('./Routes/restaurantRoute');
 const commandeRoute = require('./Routes/commandeRoute');
 const authentificationRoute = require('./Routes/authentificationRoute');
 const paiementRoute = require('./Routes/paiement.Route'); 
+const pvitService = require('./Service/pvit.Service'); 
+
 
 // Création du serveur Express
 const app = express();
@@ -49,6 +51,7 @@ app.use(paiementRoute);
 app.use(platRoute);
 app.use(restaurantRoute);
 app.use(utilisateursRoute);
+app.use(pvitService.router);
 
 // Routes simples pour tester les vues 
 app.get("/apropos", (req, res) => {
