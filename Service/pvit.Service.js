@@ -95,7 +95,7 @@ async function renewSecretKey(operationAccountCode, receptionUrlCode, renewalPas
     try {
         const data = {
             operationAccountCode: ACC_683486FC89758,
-            receptionUrlCode: "9MTBW",
+            receptionUrlCode: "R5F6W",
             password: process.env.PASSWORD        
         };
 
