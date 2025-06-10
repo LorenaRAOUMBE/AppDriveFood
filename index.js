@@ -1,67 +1,74 @@
 const express = require("express");
-const pool= require('./config.bd/db');
-const router = express.Router();
+const pool = require('./config.bd/db'); 
 const cors = require("cors");
-const jwt= require("jsonwebtoken");
+const jwt = require("jsonwebtoken"); 
+const dotenv = require('dotenv'); // Pour charger les variables d'environnement
 
-const utilisateursRoute=require("./Routes/utilisateursRoute")
-const categorieRoute =require("./Routes/categorieRoute");
-const livraisonRoute =require('./Routes/livraisonRoute');
-const livreurRoute =require('./Routes/livreurRoute');
-const platRoute =require('./Routes/platRoute');
-const restaurantRoute =require('./Routes/restaurantRoute');
-const commandeRoute =require('./Routes/commandeRoute');
-const authentificationRoute =require('./Routes/authentificationRoute');
-const bodyParser = require('body-parser');
-//  Création du serveur Express
+dotenv.config(); // Charger les variables d'environnement dès le début
+
+// Importez vos routeurs
+const utilisateursRoute = require("./Routes/utilisateursRoute");
+const categorieRoute = require("./Routes/categorieRoute");
+const livraisonRoute = require('./Routes/livraisonRoute');
+const livreurRoute = require('./Routes/livreurRoute');
+const platRoute = require('./Routes/platRoute');
+const restaurantRoute = require('./Routes/restaurantRoute');
+const commandeRoute = require('./Routes/commandeRoute');
+const authentificationRoute = require('./Routes/authentificationRoute');
+const paiementRoute = require('./Routes/paiement.Route'); 
+
+// Création du serveur Express
 const app = express();
 
-// Definition du middleware pour connexion
-
+// --- Configuration des middlewares globaux ---
 app.use(cors());
 
-app.use(express.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// Middleware de parsing du corps de la requête
+
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware de log personnalisé (optionnel, mais utile pour le débogage)
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-app.use(express.json());
+// Définition du moteur d'affichage (si utilisé)
+app.set("view engine", "ejs");
+app.set('views', 'IHM');
 
+// --- Définition des routes ---
 
-// Definition du moteur d affichage
-app.set("view engine","ejs")
-app.set('views','IHM')
-
-// definitition des routes
 app.use(authentificationRoute);
-app.use(utilisateursRoute);
 app.use(categorieRoute);
 app.use(commandeRoute);
-app.use(livreurRoute);
 app.use(livraisonRoute);
+app.use(livreurRoute);
+app.use(paiementRoute); 
 app.use(platRoute);
 app.use(restaurantRoute);
+app.use(utilisateursRoute);
 
+// Routes simples pour tester les vues 
 app.get("/apropos", (req, res) => {
-  res.status(200).render("apropos");
+    res.status(200).render("apropos");
 });
 
 app.get("/nouscontacter", (req, res) => {
-  res.status(200).render("nouscontacter");
+    res.status(200).render("nouscontacter");
 });
 
-
-
+// Gestionnaire d'erreur 404 
 app.use((req, res) => {
-  res.status(404).render("pageintrouvable");
+    res.status(404).render("pageintrouvable"); 
 });
 
-
-// Demarrage du serveur
-const PORT = 3400;
+// --- Démarrage du serveur ---
+const PORT =  3400; 
 
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur le port ${PORT} !`);
+    // C'est un bon endroit pour confirmer la connexion à votre base de données
+    console.log('Connecté à la base de donnée'); // Si pool est votre gestionnaire de connexion
 });

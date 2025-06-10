@@ -51,11 +51,8 @@ router.post("/plat", (req, res) => {
     })
   });
   
-
-
   // pour modifier un plat
 
- 
 router.put("/plat/:idPlat", (req, res) => {
     const idPlat = req.params.idPlat;
     const { idRestaurant ,nom, prix, details } = req.body;
