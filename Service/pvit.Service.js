@@ -3,8 +3,7 @@ const axios = require('axios');
 const qs = require('qs');
 const router = express.Router();
 require('dotenv').config();
-const Transaction = require('../models/Transaction');
-const { nanoid } = require('nanoid');
+
 
 const PVIT_BASE_URL = process.env.PVIT_BASE_URL;
 const PVIT_ACCOUNT_ID = process.env.PVIT_ACCOUNT_ID;
@@ -30,14 +29,27 @@ pvitApi.interceptors.request.use((config) => {
 
 // Route callback pour recevoir la clé secrète
 router.post("/api/payment/secret-callback", (req, res) => {
-
+    try {
         const { secret_key } = req.body;
+        if (!secret_key) {
+            return res.status(400).json({ message: 'Clé secrète manquante' });
+        }
         
         cachedSecretKey = secret_key;
-     
-        console.log("Clé secrète reçue :"+ cachedSecretKey);
-        res.status(200).json({ message: 'Clé secrète mise à jour avec succès' });
-   
+        lastKeyRenewalTime = Date.now();
+        console.log("Nouvelle clé secrète reçue et mise en cache");
+        
+        res.status(200).json({ 
+            success: true,
+            message: 'Clé secrète mise à jour avec succès' 
+        });
+    } catch (error) {
+        console.error('Erreur callback:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur serveur' 
+        });
+    }
 });
 
 router.post('/api/renew-secret', async (req, res) => {
@@ -95,6 +107,8 @@ router.post('/api/renew-secret', async (req, res) => {
  */
 router.post('/api/rest-transaction', async (req, res) => {
     try {
+        await ensureValidSecretKey();
+
         const {
             amount,
             product,
@@ -179,6 +193,7 @@ router.post('/api/rest-transaction', async (req, res) => {
  */
 router.get('/api/transaction/status', async (req, res) => {
     try {
+        await ensureValidSecretKey();
         const { transactionId } = req.query;
 
         if (!transactionId) {
@@ -246,6 +261,48 @@ router.get('/api/transaction/status', async (req, res) => {
 });
 
 
+const KEY_RENEWAL_INTERVAL = 1000 * 60 * 60; // 1 heure
+let lastKeyRenewalTime = null;
+
+// Fonction pour vérifier et renouveler la clé secrète si nécessaire
+async function ensureValidSecretKey() {
+    const now = Date.now();
+    const needsRenewal = !cachedSecretKey || !lastKeyRenewalTime || (now - lastKeyRenewalTime) > KEY_RENEWAL_INTERVAL;
+
+    if (needsRenewal) {
+        try {
+            const formData = {
+                operationAccountCode: process.env.PVIT_ACCOUNT_ID,
+                receptionUrlCode: process.env.CODEURLCALLBACKKEY,
+                password: process.env.PASSWORD
+            };
+
+            console.log('Renouvellement de la clé secrète...');
+            await axios.post(
+                `${PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
+                qs.stringify(formData),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            );
+
+            // Attendre la réception de la clé via le callback
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+
+            if (!cachedSecretKey) {
+                throw new Error('La clé secrète n\'a pas été reçue après renouvellement');
+            }
+
+            lastKeyRenewalTime = now;
+            console.log('Clé secrète renouvelée avec succès');
+        } catch (error) {
+            console.error('Erreur lors du renouvellement de la clé:', error);
+            throw error;
+        }
+    }
+}
 
 const pvitRouter = router;
 module.exports = pvitRouter;
