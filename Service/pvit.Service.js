@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require('axios');
 const qs = require('qs');
+const Transaction=require("../models/Transaction")
 const router = express.Router();
 require('dotenv').config();
 
