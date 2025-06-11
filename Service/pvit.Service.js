@@ -27,7 +27,7 @@ function generateReference() {
 }
 
 // Fonction pour attendre la notification de transaction
-function waitForTransactionCallback(reference, timeout = 300000) {
+function waitForTransactionCallback(reference, timeout = 30000) {
     return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
             transactionListeners.delete(reference);
