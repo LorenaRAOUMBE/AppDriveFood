@@ -105,7 +105,9 @@ router.post('/api/renew-secret', async (req, res) => {
  * Initie une transaction de paiement REST
  */
 router.post('/api/rest-transaction', async (req, res) => {
-    let reference; // Déclaration en dehors du try pour l'accès dans le catch
+    let reference; // Déclaration de reference
+    let transactionData; // Déclaration de transactionData
+    
     try {
         await ensureValidSecretKey();
 
@@ -126,7 +128,7 @@ router.post('/api/rest-transaction', async (req, res) => {
             });
         }
 
-        // Génération d'une référence alphanumérique unique
+        // Génération de la référence
         const generateReference = () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             const length = 10;
@@ -137,9 +139,10 @@ router.post('/api/rest-transaction', async (req, res) => {
             return result;
         };
 
-        reference = generateReference(); // Assignation à la variable externe
+        reference = generateReference();
 
-        const transactionData = {
+        // Définition des données de transaction
+        transactionData = {
             agent: process.env.PVIT_AGENT || "AGENT-1",
             amount,
             product,
@@ -151,79 +154,57 @@ router.post('/api/rest-transaction', async (req, res) => {
             transaction_type: "PAYMENT",
             owner_charge,
             owner_charge_operator,
-            free_info: free_info || "Transaction1"
+            free_info: (free_info || "Transaction1").substring(0, 15)
         };
 
-        // Effectuer la requête vers PVit
+        // Requête PVit
         const response = await axios.post(
             `${PVIT_BASE_URL}/FH9WCKEIPITSHCY0/rest`,
             transactionData,
             {
                 headers: {
-                    'X-Secret':cachedSecretKey,
+                    'X-Secret': cachedSecretKey,
                     'X-Callback-MediaType': 'application/json',
                     'Content-Type': 'application/json'
                 }
             }
         );
-        
-        // Attendre la notification (avec timeout de 5 minutes)
-        const transactionResult = await waitForTransactionCallback(transactionData.reference);
-    // Fonction pour attendre la notification de transaction
-        
-        function waitForTransactionCallback(reference, timeout = 30000) { 
-           return new Promise((resolve, reject) => {
-               // Créer un timer pour le timeout
-               const timeoutId = setTimeout(() => {
-                   transactionListeners.delete(reference);
-                   reject(new Error('Timeout en attendant la notification de la transaction'));
-               }, timeout);
-        
-               // Stocker la promesse et les fonctions de résolution
-               transactionListeners.set(reference, {
-                   resolve: (result) => {
-                       clearTimeout(timeoutId);
-                       resolve(result);
-                   },
-                   reject: (error) => {
-                       clearTimeout(timeoutId);
-                       reject(error);
-                   }
-               });
-           });
-        }
-        
-          // Sauvegarder la transaction
+
+        // Sauvegarder la transaction
         await Transaction.create({
             transaction_id: response.data.transaction_id,
-            reference: transactionData.reference,
+            reference: reference,
             amount: amount,
             customer_account_number: customer_account_number,
             status: 'PENDING'
         });
+
+        // Attendre la notification
+        const transactionResult = await waitForTransactionCallback(reference);
 
         res.status(200).json({
             success: true,
             message: 'Transaction complétée',
             data: {
                 ...transactionResult,
-                reference: transactionData.reference
+                reference
             }
         });
-        
+
     } catch (error) {
         if (error.message.includes('Timeout')) {
             res.status(408).json({
                 success: false,
                 message: 'Timeout en attendant la réponse de la transaction',
-                reference:transactionData?.reference
+                reference // Utilisation de reference au lieu de transactionData?.reference
             });
         } else {
             console.error('Erreur lors de l\'initiation de la transaction REST:', error);
             res.status(500).json({
                 success: false,
                 message: 'Erreur lors de l\'initiation de la transaction',
-                error: error.response?.data || error.message
+                error: error.response?.data || error.message,
+                reference // Ajout de la référence dans la réponse d'erreur
             });
         }
     }
@@ -248,19 +229,19 @@ router.post('/api/payment-webhook', async (req, res) => {
         
         console.log('Notification PVit reçue:', { transaction_id, reference, status });
         
-        // Sauvegarder ou mettre à jour la transaction avec toutes les données
-        const transactionData = {
-            transaction_id,
-            reference,
-            amount,
-            status,
-            customer_account_number: req.body.customer_account_number,
-            response_code,
-            response_text,
-            fees,
-            operator,
-            updated_at: new Date()
-        };
+        // // Sauvegarder ou mettre à jour la transaction avec toutes les données
+        // const transactionData = {
+        //     transaction_id,
+        //     reference,
+        //     amount,
+        //     status,
+        //     customer_account_number: req.body.customer_account_number,
+        //     response_code,
+        //     response_text,
+        //     fees,
+        //     operator,
+        //     updated_at: new Date()
+        // };
 
         try {
             // Vérifier si la transaction existe déjà
