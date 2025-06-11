@@ -254,7 +254,7 @@ router.post('/api/rest-transaction', async (req, res) => {
 /**
  * Route pour vérifier le statut d'une transaction
  */
-router.get('/api/transaction/status', async (req, res) => {
+router.get('/api/transaction/status/:transactionId', async (req, res) => {
     try {
         await ensureValidSecretKey();
         const { transactionId } = req.query;
