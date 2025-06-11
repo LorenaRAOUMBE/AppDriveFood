@@ -30,20 +30,14 @@ pvitApi.interceptors.request.use((config) => {
 
 // Route callback pour recevoir la clé secrète
 router.post("/api/payment/secret-callback", (req, res) => {
-    try {
+
         const { secret_key } = req.body;
-        if (!secret_key) {
-            return res.status(400).json({ message: 'Clé secrète manquante' });
-        }
         
         cachedSecretKey = secret_key;
      
-        console.log("Clé secrète reçue :"+ cachedSecretKey)
+        console.log("Clé secrète reçue :"+ cachedSecretKey);
         res.status(200).json({ message: 'Clé secrète mise à jour avec succès' });
-    } catch (error) {
-        console.error('Erreur lors de la mise à jour de la clé secrète:', error);
-        res.status(500).json({ message: 'Erreur serveur' });
-    }
+   
 });
 
 router.post('/api/renew-secret', async (req, res) => {
