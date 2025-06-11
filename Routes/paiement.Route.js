@@ -114,4 +114,127 @@
 //     }
 // });
 
+// /**
+//  * Route pour générer un lien de paiement
+//  */
+// router.post('/api/payment/generate-link', async (req, res) => {
+//     let reference;
+    
+//     try {
+//         await ensureValidSecretKey();
+
+//         const {
+//             amount,
+//             customer_account_number,
+//             service,
+//             agent,
+//             product,
+//             free_info,
+//             owner_charge = "CUSTOMER",
+//             operator_owner_charge = "CUSTOMER",
+//             failed_redirection_url_code,
+//             success_redirection_url_code
+//         } = req.body;
+
+//         // Validation des champs obligatoires
+//         if (!amount || !customer_account_number || !service) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Les champs amount, customer_account_number et service sont requis'
+//             });
+//         }
+
+//         // Validation du montant minimum
+//         if (amount <= 150) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Le montant doit être supérieur à 150'
+//             });
+//         }
+
+//         // Validation du service
+//         const validServices = ['VISA_MASTERCARD', 'WEB', 'RESTLINK'];
+//         if (!validServices.includes(service)) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Le service doit être VISA_MASTERCARD, WEB ou RESTLINK'
+//             });
+//         }
+
+//         // Validation des codes de redirection
+//         if (!failed_redirection_url_code || !success_redirection_url_code) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Les codes de redirection sont requis'
+//             });
+//         }
+
+//         // Génération de la référence
+//         reference = generateReference();
+
+//         // Construction des données de transaction avec validation des longueurs
+//         const transactionData = {
+//             agent: (agent || "AGENT-1").substring(0, 15),
+//             amount,
+//             product: (product || "PRODUIT-1").substring(0, 15),
+//             reference: reference.substring(0, 15),
+//             service,
+//             callback_url_code: process.env.CODEURLCALLBACK,
+//             customer_account_number: customer_account_number.substring(0, 20),
+//             merchant_operation_account_code: process.env.PVIT_ACCOUNT_ID,
+//             transaction_type: "PAYMENT",
+//             owner_charge,
+//             operator_owner_charge,
+//             free_info: free_info ? free_info.substring(0, 15) : undefined,
+//             failed_redirection_url_code,
+//             success_redirection_url_code
+//         };
+
+//         // Requête vers l'API PVit
+//         const response = await axios.post(
+//             `${PVIT_BASE_URL}/ZRS0VFCPA0YJUCFV/link`,
+//             transactionData,
+//             {
+//                 headers: {
+//                     'X-Secret': cachedSecretKey,
+//                     'X-Callback-MediaType': 'application/json',
+//                     'Content-Type': 'application/json'
+//                 }
+//             }
+//         );
+
+//         // Sauvegarde en base de données
+//         await Transaction.create({
+//             transaction_id: response.data.transaction_id,
+//             reference,
+//             amount,
+//             status: 'PENDING',
+//             customer_account_number,
+//             free_info: free_info?.substring(0, 15),
+//             transaction_operation: 'PAYMENT',
+//             operator: service === 'VISA_MASTERCARD' ? 'VISA' : null
+//         });
+
+//         // Réponse avec le lien et les informations
+//         res.status(200).json({
+//             success: true,
+//             data: {
+//                 payment_link: response.data.payment_link,
+//                 transaction_id: response.data.transaction_id,
+//                 reference,
+//                 service
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error('Erreur génération lien:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la génération du lien',
+//             error: error.response?.data || error.message,
+//             reference: reference || null
+//         });
+//     }
+// });
+
 // module.exports = router;

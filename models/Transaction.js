@@ -42,6 +42,7 @@ class Transaction {
             const sql = `
                 UPDATE transactions_pvit 
                 SET 
+                    transaction_id = ?,
                     status = ?,
                     fees = ?,
                     total_amount = ?,
@@ -52,6 +53,7 @@ class Transaction {
             `;
 
             const values = [
+                transactionData.transaction_id,
                 transactionData.status,
                 transactionData.fees || null,
                 transactionData.total_amount || null,
