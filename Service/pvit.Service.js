@@ -36,7 +36,7 @@ router.post("/api/payment/secret-callback", (req, res) => {
        
         cachedSecretKey = secret_key;
         lastKeyRenewalTime = Date.now();
-        console.log("Nouvelle clé secrète reçue et mise en cache:"+cachedSecretKey);
+        console.log("Nouvelle clé secrète reçue et mise en cache");
         
         res.status(200).json({ 
             success: true,
@@ -57,6 +57,14 @@ router.post('/api/renew-secret', async (req, res) => {
         const operationAccountCode = process.env.PVIT_ACCOUNT_ID;
         const receptionUrlCode = process.env.CODEURLCALLBACKKEY;
         const password = process.env.PASSWORD;
+
+        // Vérification des variables d'environnement requises
+        if (!operationAccountCode || !receptionUrlCode || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Configuration manquante. Vérifiez vos variables d\'environnement.'
+            });
+        }
 
         // Construction des données pour la requête
         const formData = {
@@ -99,6 +107,7 @@ router.post('/api/renew-secret', async (req, res) => {
 router.post('/api/rest-transaction', async (req, res) => {
     try {
         await ensureValidSecretKey();
+
         const {
             amount,
             product,
@@ -148,9 +157,32 @@ router.post('/api/rest-transaction', async (req, res) => {
                 }
             }
         );
-
+        
         // Attendre la notification (avec timeout de 5 minutes)
         const transactionResult = await waitForTransactionCallback(transactionData.reference);
+    // Fonction pour attendre la notification de transaction
+        
+        function waitForTransactionCallback(reference, timeout = 30000) { 
+           return new Promise((resolve, reject) => {
+               // Créer un timer pour le timeout
+               const timeoutId = setTimeout(() => {
+                   transactionListeners.delete(reference);
+                   reject(new Error('Timeout en attendant la notification de la transaction'));
+               }, timeout);
+        
+               // Stocker la promesse et les fonctions de résolution
+               transactionListeners.set(reference, {
+                   resolve: (result) => {
+                       clearTimeout(timeoutId);
+                       resolve(result);
+                   },
+                   reject: (error) => {
+                       clearTimeout(timeoutId);
+                       reject(error);
+                   }
+               });
+           });
+        }
         
         res.status(200).json({
             success: true,
@@ -186,118 +218,71 @@ router.post('/api/rest-transaction', async (req, res) => {
 router.post('/api/payment-webhook', async (req, res) => {
     try {
         const {
-            transactionId,
-            merchantReferenceId,
+            transaction_id,
+            reference,
             status,
+            response_code,
+            response_text,
             amount,
-            customerID,
             fees,
-            totalAmount,
-            chargeOwner,
-            freeInfo,
-            transactionOperation,
-            code,
-            callbackMediaType,
             operator
         } = req.body;
         
-        console.log('Notification PVit reçue:', { 
-            transactionId, 
-            merchantReferenceId, 
-            status,
-            code 
-        });
-        
-        // Vérifier que la requête provient de PVit
-        const pvitIp = req.ip; // À comparer avec l'IP autorisée en production
+        console.log('Notification PVit reçue:', { transaction_id, reference, status });
         
         // Sauvegarder ou mettre à jour la transaction avec toutes les données
         const transactionData = {
-            transaction_id: transactionId,
-            reference: merchantReferenceId,
+            transaction_id,
+            reference,
             amount,
             status,
-            customer_account_number: customerID,
+            customer_account_number: req.body.customer_account_number,
+            response_code,
+            response_text,
             fees,
-            total_amount: totalAmount,
-            charge_owner: chargeOwner,
-            free_info: freeInfo,
-            transaction_operation: transactionOperation,
             operator,
             updated_at: new Date()
         };
 
         try {
             // Vérifier si la transaction existe déjà
-            const existingTransaction = await Transaction.findByReference(merchantReferenceId);
+            const existingTransaction = await Transaction.findByReference(reference);
             
             if (existingTransaction) {
                 // Mettre à jour la transaction existante
-                await Transaction.updateTransaction(merchantReferenceId, transactionData);
-                console.log(`Transaction ${merchantReferenceId} mise à jour avec succès`);
+                await Transaction.updateTransaction(reference, transactionData);
+                console.log(`Transaction ${reference} mise à jour avec succès`);
             } else {
                 // Créer une nouvelle transaction
                 await Transaction.create(transactionData);
-                console.log(`Transaction ${merchantReferenceId} créée avec succès`);
+                console.log(`Transaction ${reference} créée avec succès`);
             }
-
-            // Notifier les écouteurs en attente
-            if (transactionListeners.has(merchantReferenceId)) {
-                const listener = transactionListeners.get(merchantReferenceId);
-                listener.resolve(transactionData);
-                transactionListeners.delete(merchantReferenceId);
-            }
-
-            // Réponse requise par PVit
-            return res.status(200).json({
-                responseCode: code,
-                transactionId: transactionId
-            });
-
         } catch (dbError) {
             console.error('Erreur base de données:', dbError);
-            return res.status(500).json({
-                responseCode: 500,
-                transactionId: transactionId,
-                message: 'Erreur lors du traitement de la transaction'
-            });
+            throw dbError;
         }
+        
+        // Notifier les écouteurs en attente
+        if (transactionListeners.has(reference)) {
+            const listener = transactionListeners.get(reference);
+            listener.resolve(transactionData);
+            transactionListeners.delete(reference);
+        }
+
+        res.status(200).json({ 
+            success: true,
+            message: 'Transaction enregistrée avec succès'
+        });
     } catch (error) {
         console.error('Erreur webhook:', error);
-        // Même en cas d'erreur, on répond avec le format attendu
-        res.status(500).json({
-            responseCode: 500,
-            transactionId: req.body?.transactionId,
-            message: error.message
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
         });
     }
 });
 
-
 /**
- * Fonction pour attendre la notification de transaction
-*/
-function waitForTransactionCallback(reference, timeout = 300000) { // 5 minutes par défaut
-    return new Promise((resolve, reject) => {
-        // Créer un timer pour le timeout
-        const timeoutId = setTimeout(() => {
-            transactionListeners.delete(reference);
-            reject(new Error('Timeout en attendant la notification de la transaction'));
-        }, timeout);
-
-        // Stocker la promesse et les fonctions de résolution
-        transactionListeners.set(reference, {
-            resolve: (result) => {
-                clearTimeout(timeoutId);
-                resolve(result);
-            },
-            reject: (error) => {
-                clearTimeout(timeoutId);
-                reject(error);
-            }
-        });
-    });
-}
 
 /**
  * Route pour vérifier le statut d'une transaction
