@@ -193,6 +193,15 @@ router.post('/api/rest-transaction', async (req, res) => {
            });
         }
         
+          // Sauvegarder la transaction
+        await Transaction.create({
+            transaction_id: response.data.transaction_id,
+            reference: transactionData.reference,
+            amount: amount,
+            customer_account_number: customer_account_number,
+            status: 'PENDING'
+        });
+        
         res.status(200).json({
             success: true,
             message: 'Transaction complétée',
