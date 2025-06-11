@@ -105,6 +105,7 @@ router.post('/api/renew-secret', async (req, res) => {
  * Initie une transaction de paiement REST
  */
 router.post('/api/rest-transaction', async (req, res) => {
+    let reference; // Déclaration en dehors du try pour l'accès dans le catch
     try {
         await ensureValidSecretKey();
 
@@ -117,6 +118,14 @@ router.post('/api/rest-transaction', async (req, res) => {
             owner_charge_operator = "MERCHANT"
         } = req.body;
 
+        // Validation des champs requis
+        if (!amount || !customer_account_number) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount et customer_account_number sont requis'
+            });
+        }
+
         // Génération d'une référence alphanumérique unique
         const generateReference = () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -128,13 +137,13 @@ router.post('/api/rest-transaction', async (req, res) => {
             return result;
         };
 
-        const reference = generateReference(); // Exemple: REFAB12CD34EF
+        reference = generateReference(); // Assignation à la variable externe
 
         const transactionData = {
             agent: process.env.PVIT_AGENT || "AGENT-1",
             amount,
             product,
-            reference,  // Utilisation de la nouvelle référence
+            reference,
             service: "RESTFUL",
             callback_url_code: process.env.CODEURLCALLBACK,
             customer_account_number,
