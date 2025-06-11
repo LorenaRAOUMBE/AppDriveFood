@@ -54,7 +54,7 @@ router.post("/api/payment/secret-callback", (req, res) => {
 router.post('/api/renew-secret', async (req, res) => {
     try {
         // Récupération des variables d'environnement
-        const operationAccountCode = process.env.PVIT_ACCOUNT_ID;
+        const operationAccountCode = PVIT_ACCOUNT_ID;
         const receptionUrlCode = process.env.CODEURLCALLBACKKEY;
         const password = process.env.PASSWORD;
 
