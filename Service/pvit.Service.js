@@ -1,105 +1,162 @@
 const express = require("express");
 const axios = require('axios');
 const qs = require('qs');
-const Transaction=require("../models/Transaction")
+const Transaction = require("../models/Transaction");
 const router = express.Router();
 require('dotenv').config();
 
-
+// Configuration
 const PVIT_BASE_URL = process.env.PVIT_BASE_URL;
 const PVIT_ACCOUNT_ID = process.env.PVIT_ACCOUNT_ID;
+const KEY_RENEWAL_INTERVAL = 1000 * 60 * 60; // 1 heure
 
+// Variables globales
 let cachedSecretKey = null;
+let lastKeyRenewalTime = null;
 const transactionListeners = new Map();
 
-// Création d'une instance Axios préconfigurée
-const pvitApi = axios.create({
-    baseURL: PVIT_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json'
+// Fonction utilitaire pour générer une référence
+function generateReference() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const length = 10;
+    let result = 'REF';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-});
+    return result;
+}
 
-// Middleware pour mettre à jour le header X-Secret
-pvitApi.interceptors.request.use((config) => {
-    if (cachedSecretKey) {
-        config.headers['X-Secret'] = cachedSecretKey;
+// Fonction pour attendre la notification de transaction
+function waitForTransactionCallback(reference, timeout = 300000) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            transactionListeners.delete(reference);
+            reject(new Error('Timeout en attendant la notification de la transaction'));
+        }, timeout);
+
+        transactionListeners.set(reference, {
+            resolve: (result) => {
+                clearTimeout(timeoutId);
+                resolve(result);
+            },
+            reject: (error) => {
+                clearTimeout(timeoutId);
+                reject(error);
+            }
+        });
+    });
+}
+
+// Fonction pour vérifier et renouveler la clé secrète
+async function ensureValidSecretKey() {
+    const now = Date.now();
+    const needsRenewal = !cachedSecretKey || !lastKeyRenewalTime || (now - lastKeyRenewalTime) > KEY_RENEWAL_INTERVAL;
+
+    if (needsRenewal) {
+        try {
+            const formData = {
+                operationAccountCode: PVIT_ACCOUNT_ID,
+                receptionUrlCode: process.env.CODEURLCALLBACKKEY,
+                password: process.env.PASSWORD
+            };
+
+            console.log('Renouvellement de la clé secrète...');
+            await axios.post(
+                `${PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
+                qs.stringify(formData),
+                {
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                }
+            );
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            if (!cachedSecretKey) {
+                throw new Error('La clé secrète n\'a pas été reçue après renouvellement');
+            }
+
+            lastKeyRenewalTime = now;
+            console.log('Clé secrète renouvelée avec succès');
+        } catch (error) {
+            console.error('Erreur renouvellement clé:', error);
+            throw error;
+        }
     }
-    return config;
-});
+    return cachedSecretKey;
+}
 
-
-// Route callback pour recevoir la clé secrète
-router.post("/api/payment/secret-callback", (req, res) => {
+// Routes
+router.post("/api/payment/secret-callback", async (req, res) => {
     try {
         const { secret_key } = req.body;
-       
+        
         cachedSecretKey = secret_key;
         lastKeyRenewalTime = Date.now();
-        console.log("Nouvelle clé secrète reçue et mise en cache");
+        console.log("Nouvelle clé secrète reçue");
         
         res.status(200).json({ 
-            success: true,
+            responseCode: 200,
             message: 'Clé secrète mise à jour avec succès' 
         });
     } catch (error) {
         console.error('Erreur callback:', error);
         res.status(500).json({ 
-            success: false,
+            responseCode: 500,
             message: 'Erreur serveur' 
         });
     }
 });
 
-router.post('/api/renew-secret', async (req, res) => {
+router.post('/api/payment-webhook', async (req, res) => {
     try {
-        // Récupération des variables d'environnement
-        const operationAccountCode = PVIT_ACCOUNT_ID;
-        const receptionUrlCode = process.env.CODEURLCALLBACKKEY;
-        const password = process.env.PASSWORD;
+        const {
+            transactionId,
+            merchantReferenceId,
+            status,
+            amount,
+            customerID,
+            fees,
+            totalAmount,
+            chargeOwner,
+            transactionOperation,
+            code,
+            operator
+        } = req.body;
 
-        // Vérification des variables d'environnement requises
-        if (!operationAccountCode || !receptionUrlCode || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Configuration manquante. Vérifiez vos variables d\'environnement.'
-            });
-        }
-
-        // Construction des données pour la requête
-        const formData = {
-            operationAccountCode,
-            receptionUrlCode,
-            password
+        const transactionData = {
+            transaction_id: transactionId,
+            reference: merchantReferenceId,
+            status,
+            amount,
+            customer_account_number: customerID,
+            fees,
+            total_amount: totalAmount,
+            charge_owner: chargeOwner,
+            operator,
+            updated_at: new Date()
         };
 
-        // Appel à l'API PVit pour renouveler la clé secrète
-        const response = await axios.post(
-            `${process.env.PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
-            qs.stringify(formData),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
+        await Transaction.updateTransaction(merchantReferenceId, transactionData);
 
-        console.log(cachedSecretKey)
-        res.status(200).json({
-            success: true,
-            message: 'Demande de renouvellement de clé secrète envoyée avec succès'
+        if (transactionListeners.has(merchantReferenceId)) {
+            const listener = transactionListeners.get(merchantReferenceId);
+            listener.resolve(transactionData);
+            transactionListeners.delete(merchantReferenceId);
+        }
+
+        return res.status(200).json({
+            responseCode: code,
+            transactionId
         });
-
     } catch (error) {
-        console.error('Erreur lors du renouvellement de la clé secrète:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors du renouvellement de la clé secrète',
-            error: error.response?.data || error.message
+        console.error('Erreur webhook:', error);
+        return res.status(500).json({
+            responseCode: 500,
+            transactionId: req.body?.transactionId,
+            message: error.message
         });
     }
 });
-
 
 /**
  * Initie une transaction de paiement REST
@@ -129,16 +186,6 @@ router.post('/api/rest-transaction', async (req, res) => {
         }
 
         // Génération de la référence
-        const generateReference = () => {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            const length = 10;
-            let result = 'REF';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        };
-
         reference = generateReference();
 
         // Définition des données de transaction
@@ -169,15 +216,6 @@ router.post('/api/rest-transaction', async (req, res) => {
                 }
             }
         );
-
-        // Sauvegarder la transaction
-        await Transaction.create({
-            transaction_id: response.data.transaction_id,
-            reference: reference,
-            amount: amount,
-            customer_account_number: customer_account_number,
-            status: 'PENDING'
-        });
 
         // Attendre la notification
         const transactionResult = await waitForTransactionCallback(reference);
@@ -210,78 +248,6 @@ router.post('/api/rest-transaction', async (req, res) => {
     }
 });
 
-
-/**
- * Route pour recevoir les notifications de transaction
- */
-router.post('/api/payment-webhook', async (req, res) => {
-    try {
-        const {
-            transaction_id,
-            reference,
-            status,
-            response_code,
-            response_text,
-            amount,
-            fees,
-            operator
-        } = req.body;
-        
-        console.log('Notification PVit reçue:', { transaction_id, reference, status });
-        
-        // // Sauvegarder ou mettre à jour la transaction avec toutes les données
-        // const transactionData = {
-        //     transaction_id,
-        //     reference,
-        //     amount,
-        //     status,
-        //     customer_account_number: req.body.customer_account_number,
-        //     response_code,
-        //     response_text,
-        //     fees,
-        //     operator,
-        //     updated_at: new Date()
-        // };
-
-        try {
-            // Vérifier si la transaction existe déjà
-            const existingTransaction = await Transaction.findByReference(reference);
-            
-            if (existingTransaction) {
-                // Mettre à jour la transaction existante
-                await Transaction.updateTransaction(reference, transactionData);
-                console.log(`Transaction ${reference} mise à jour avec succès`);
-            } else {
-                // Créer une nouvelle transaction
-                await Transaction.create(transactionData);
-                console.log(`Transaction ${reference} créée avec succès`);
-            }
-        } catch (dbError) {
-            console.error('Erreur base de données:', dbError);
-            throw dbError;
-        }
-        
-        // Notifier les écouteurs en attente
-        if (transactionListeners.has(reference)) {
-            const listener = transactionListeners.get(reference);
-            listener.resolve(transactionData);
-            transactionListeners.delete(reference);
-        }
-
-        res.status(200).json({ 
-            success: true,
-            message: 'Transaction enregistrée avec succès'
-        });
-    } catch (error) {
-        console.error('Erreur webhook:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-/**
 
 /**
  * Route pour vérifier le statut d'une transaction
@@ -354,48 +320,6 @@ router.get('/api/transaction/status', async (req, res) => {
         });
     }
 });
-const KEY_RENEWAL_INTERVAL = 1000 * 60 * 60; // 1 heure
-let lastKeyRenewalTime = null;
-
-// Fonction pour vérifier et renouveler la clé secrète si nécessaire
-async function ensureValidSecretKey() {
-    const now = Date.now();
-    const needsRenewal = !cachedSecretKey || !lastKeyRenewalTime || (now - lastKeyRenewalTime) > KEY_RENEWAL_INTERVAL;
-
-    if (needsRenewal) {
-        try {
-            const formData = {
-                operationAccountCode: process.env.PVIT_ACCOUNT_ID,
-                receptionUrlCode: process.env.CODEURLCALLBACKKEY,
-                password: process.env.PASSWORD
-            };
-
-            console.log('Renouvellement de la clé secrète...');
-            await axios.post(
-                `${PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
-                qs.stringify(formData),
-                {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                }
-            );
-
-            // Attendre la réception de la clé via le callback
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            if (!cachedSecretKey) {
-                throw new Error('La clé secrète n\'a pas été reçue après renouvellement');
-            }
-
-            lastKeyRenewalTime = now;
-            console.log('Clé secrète renouvelée avec succès');
-        } catch (error) {
-            console.error('Erreur lors du renouvellement de la clé:', error);
-            throw error;
-        }
-    }
-}
 
 const pvitRouter = router;
 module.exports = pvitRouter;
