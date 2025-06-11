@@ -118,7 +118,6 @@ router.post('/api/payment-webhook', async (req, res) => {
             fees,
             totalAmount,
             chargeOwner,
-            transactionOperation,
             code,
             operator
         } = req.body;
@@ -138,11 +137,11 @@ router.post('/api/payment-webhook', async (req, res) => {
 
         await Transaction.updateTransaction(merchantReferenceId, transactionData);
 
-        if (transactionListeners.has(merchantReferenceId)) {
-            const listener = transactionListeners.get(merchantReferenceId);
-            listener.resolve(transactionData);
-            transactionListeners.delete(merchantReferenceId);
-        }
+        // if (transactionListeners.has(merchantReferenceId)) {
+        //     const listener = transactionListeners.get(merchantReferenceId);
+        //     listener.resolve(transactionData);
+        //     transactionListeners.delete(merchantReferenceId);
+        // }
 
         return res.status(200).json({
             responseCode: code,
