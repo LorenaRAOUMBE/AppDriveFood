@@ -104,19 +104,27 @@ router.post('/api/rest-transaction', async (req, res) => {
             owner_charge_operator = "MERCHANT"
         } = req.body;
 
-    
-        // Génération d'une référence unique pour votre système
-        const shortUniqueId = nanoid(10);
-        const reference = `REF${shortUniqueId}`; // 3 + 11 = 14 caractères
-        
+        // Génération d'une référence alphanumérique unique
+        const generateReference = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const length = 10;
+            let result = 'REF';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
+
+        const reference = generateReference(); // Exemple: REFAB12CD34EF
+
         const transactionData = {
             agent: process.env.PVIT_AGENT || "AGENT-1",
-            amount:amount ||'2000',
-            product: product || "PRODUIT-1",
-            reference: reference ,
+            amount,
+            productg,
+            reference,  // Utilisation de la nouvelle référence
             service: "RESTFUL",
-            callback_url_code: process.env.CODEURLCALLBACK, // Code pour le webhook
-            customer_account_number:customer_account_number,
+            callback_url_code: process.env.CODEURLCALLBACK,
+            customer_account_number,
             merchant_operation_account_code: process.env.PVIT_ACCOUNT_ID,
             transaction_type: "PAYMENT",
             owner_charge,
