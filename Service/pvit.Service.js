@@ -124,6 +124,7 @@ router.post('/api/payment-webhook', async (req, res) => {
             operator
         } = req.body;
 
+        // Données pour la base de données
         const transactionData = {
             transaction_id: transactionId,
             reference: merchantReferenceId,
@@ -138,8 +139,20 @@ router.post('/api/payment-webhook', async (req, res) => {
             operator
         };
 
-        await Transaction.updateTransaction(merchantReferenceId, transactionData);
+        // Vérifier si la transaction existe déjà
+        const existingTransaction = await Transaction.findByReference(merchantReferenceId);
 
+        if (existingTransaction) {
+            // Mise à jour de la transaction existante
+            await Transaction.updateTransaction(merchantReferenceId, transactionData);
+            console.log(`Transaction ${merchantReferenceId} mise à jour`);
+        } else {
+            // Création d'une nouvelle transaction
+            await Transaction.create(transactionData);
+            console.log(`Transaction ${merchantReferenceId} créée`);
+        }
+
+        // Notifier les écouteurs
         if (transactionListeners.has(merchantReferenceId)) {
             const listener = transactionListeners.get(merchantReferenceId);
             listener.resolve(transactionData);
@@ -164,8 +177,8 @@ router.post('/api/payment-webhook', async (req, res) => {
  * Initie une transaction de paiement REST
  */
 router.post('/api/rest-transaction', async (req, res) => {
-    let reference; // Déclaration de reference
-    let transactionData; // Déclaration de transactionData
+    let reference;
+    let transactionData;
     
     try {
         await ensureValidSecretKey();
@@ -219,8 +232,24 @@ router.post('/api/rest-transaction', async (req, res) => {
             }
         );
 
+        // Sauvegarde initiale de la transaction
+        await Transaction.create({
+            transaction_id: response.data.transaction_id || `INIT_${reference}`,
+            reference: reference,
+            amount: amount,
+            status: 'PENDING',
+            customer_account_number: customer_account_number,
+            charge_owner: owner_charge,
+            free_info: free_info,
+            transaction_operation: 'PAYMENT'
+        });
+
+        console.log(`Transaction initiale ${reference} sauvegardée`);
+
         // Attendre la notification
         const transactionResult = await waitForTransactionCallback(reference);
+        
+        console.log("Transaction complétée:", transactionResult);
 
         res.status(200).json({
             success: true,
@@ -258,6 +287,8 @@ router.get('/api/transaction/status/:transactionId', async (req, res) => {
     try {
         await ensureValidSecretKey();
         const { transactionId } = req.query;
+        console.log(transactionId);
+        
 
         // Récupération des informations de configuration
         const accountOperationCode = process.env.PVIT_ACCOUNT_ID;
