@@ -106,7 +106,7 @@ router.post('/api/rest-transaction', async (req, res) => {
 
     
         // Génération d'une référence unique pour votre système
-        const shortUniqueId = nanoid(11);
+        const shortUniqueId = nanoid(10);
         const reference = `REF${shortUniqueId}`; // 3 + 11 = 14 caractères
         
         const transactionData = {
