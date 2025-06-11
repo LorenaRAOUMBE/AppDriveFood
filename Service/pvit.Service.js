@@ -198,7 +198,7 @@ router.post('/api/rest-transaction', async (req, res) => {
             res.status(408).json({
                 success: false,
                 message: 'Timeout en attendant la réponse de la transaction',
-                reference: transactionData?.reference
+                reference:transactionData.reference
             });
         } else {
             console.error('Erreur lors de l\'initiation de la transaction REST:', error);
