@@ -66,6 +66,40 @@ class Transaction {
             throw error;
         }
     }
+
+    static updateTransaction(reference, transactionData) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                UPDATE transactions_pvit 
+                SET 
+                    status = ?,
+                    response_code = ?,
+                    response_text = ?,
+                    fees = ?,
+                    operator = ?,
+                    updated_at = NOW()
+                WHERE reference = ?
+            `;
+            
+            const values = [
+                transactionData.status,
+                transactionData.response_code,
+                transactionData.response_text,
+                transactionData.fees,
+                transactionData.operator,
+                reference
+            ];
+
+            pool.query(sql, values, (error, results) => {
+                if (error) {
+                    console.error('Erreur mise à jour transaction:', error);
+                    reject(error);
+                    return;
+                }
+                resolve(results.affectedRows > 0);
+            });
+        });
+    }
 }
 
 module.exports = Transaction;
