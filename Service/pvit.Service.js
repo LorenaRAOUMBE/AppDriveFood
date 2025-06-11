@@ -116,10 +116,8 @@ router.post('/api/payment-webhook', async (req, res) => {
             amount,
             customerID,
             fees,
-            totalAmount,
             chargeOwner,
-            code,
-            operator
+            code
         } = req.body;
 
         const transactionData = {
@@ -129,9 +127,7 @@ router.post('/api/payment-webhook', async (req, res) => {
             amount,
             customer_account_number: customerID,
             fees,
-            total_amount: totalAmount,
             charge_owner: chargeOwner,
-            operator,
             updated_at: new Date()
         };
 
