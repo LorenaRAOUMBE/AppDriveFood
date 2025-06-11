@@ -186,69 +186,93 @@ router.post('/api/rest-transaction', async (req, res) => {
 router.post('/api/payment-webhook', async (req, res) => {
     try {
         const {
-            transaction_id,
-            reference,
+            transactionId,
+            merchantReferenceId,
             status,
-            response_code,
-            response_text,
             amount,
+            customerID,
             fees,
+            totalAmount,
+            chargeOwner,
+            freeInfo,
+            transactionOperation,
+            code,
+            callbackMediaType,
             operator
         } = req.body;
         
-        console.log('Notification PVit reçue:', { transaction_id, reference, status });
+        console.log('Notification PVit reçue:', { 
+            transactionId, 
+            merchantReferenceId, 
+            status,
+            code 
+        });
+        
+        // Vérifier que la requête provient de PVit
+        const pvitIp = req.ip; // À comparer avec l'IP autorisée en production
         
         // Sauvegarder ou mettre à jour la transaction avec toutes les données
         const transactionData = {
-            transaction_id,
-            reference,
+            transaction_id: transactionId,
+            reference: merchantReferenceId,
             amount,
             status,
-            customer_account_number: req.body.customer_account_number,
-            response_code,
-            response_text,
+            customer_account_number: customerID,
             fees,
+            total_amount: totalAmount,
+            charge_owner: chargeOwner,
+            free_info: freeInfo,
+            transaction_operation: transactionOperation,
             operator,
             updated_at: new Date()
         };
 
         try {
             // Vérifier si la transaction existe déjà
-            const existingTransaction = await Transaction.findByReference(reference);
+            const existingTransaction = await Transaction.findByReference(merchantReferenceId);
             
             if (existingTransaction) {
                 // Mettre à jour la transaction existante
-                await Transaction.updateTransaction(reference, transactionData);
-                console.log(`Transaction ${reference} mise à jour avec succès`);
+                await Transaction.updateTransaction(merchantReferenceId, transactionData);
+                console.log(`Transaction ${merchantReferenceId} mise à jour avec succès`);
             } else {
                 // Créer une nouvelle transaction
                 await Transaction.create(transactionData);
-                console.log(`Transaction ${reference} créée avec succès`);
+                console.log(`Transaction ${merchantReferenceId} créée avec succès`);
             }
+
+            // Notifier les écouteurs en attente
+            if (transactionListeners.has(merchantReferenceId)) {
+                const listener = transactionListeners.get(merchantReferenceId);
+                listener.resolve(transactionData);
+                transactionListeners.delete(merchantReferenceId);
+            }
+
+            // Réponse requise par PVit
+            return res.status(200).json({
+                responseCode: code,
+                transactionId: transactionId
+            });
+
         } catch (dbError) {
             console.error('Erreur base de données:', dbError);
-            throw dbError;
+            return res.status(500).json({
+                responseCode: 500,
+                transactionId: transactionId,
+                message: 'Erreur lors du traitement de la transaction'
+            });
         }
-        
-        // Notifier les écouteurs en attente
-        if (transactionListeners.has(reference)) {
-            const listener = transactionListeners.get(reference);
-            listener.resolve(transactionData);
-            transactionListeners.delete(reference);
-        }
-
-        res.status(200).json({ 
-            success: true,
-            message: 'Transaction enregistrée avec succès'
-        });
     } catch (error) {
         console.error('Erreur webhook:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        // Même en cas d'erreur, on répond avec le format attendu
+        res.status(500).json({
+            responseCode: 500,
+            transactionId: req.body?.transactionId,
+            message: error.message
         });
     }
 });
+
 
 /**
  * Fonction pour attendre la notification de transaction
