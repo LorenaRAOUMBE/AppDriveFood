@@ -120,7 +120,7 @@ router.post('/api/rest-transaction', async (req, res) => {
         const transactionData = {
             agent: process.env.PVIT_AGENT || "AGENT-1",
             amount,
-            productg,
+            product,
             reference,  // Utilisation de la nouvelle référence
             service: "RESTFUL",
             callback_url_code: process.env.CODEURLCALLBACK,
@@ -138,7 +138,7 @@ router.post('/api/rest-transaction', async (req, res) => {
             transactionData,
             {
                 headers: {
-                    'X-Secret': cachedSecretKey,
+                    'X-Secret':cachedSecretKey,
                     'X-Callback-MediaType': 'application/json',
                     'Content-Type': 'application/json'
                 }
