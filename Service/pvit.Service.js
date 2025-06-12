@@ -286,8 +286,7 @@ router.post('/api/payment/generate-link', async (req, res) => {
     let reference;
     
     try {
-        await ensureValidSecretKey();
-
+        // Validation des champs requis d'abord
         const {
             amount,
             customer_account_number,
@@ -296,8 +295,21 @@ router.post('/api/payment/generate-link', async (req, res) => {
             product,
             free_info,
             owner_charge = "CUSTOMER",
-            operator_owner_charge = "CUSTOMER",
+            operator_owner_charge = "CUSTOMER"
         } = req.body;
+
+        // Validation des champs obligatoires avant toute opération
+        if (!amount || !customer_account_number || !service) {
+            return res.status(400).json({
+                success: false,
+                message: 'Les champs amount, customer_account_number et service sont requis'
+            });
+        }
+
+        // Génération de la référence avant les autres opérations
+        reference = generateReference();
+
+        await ensureValidSecretKey();
 
         // Validation du montant minimum
         if (amount <= 150) {
@@ -317,15 +329,12 @@ router.post('/api/payment/generate-link', async (req, res) => {
         }
 
         // Validation des codes de redirection
-        if (!failed_redirection_url_code || !success_redirection_url_code) {
+        if (!process.env.CODEURLREDIRECTFAILED || !process.env.CODEURLREDIRECTSUCCESS) {
             return res.status(400).json({
                 success: false,
-                message: 'Les codes de redirection sont requis'
+                message: 'Les codes de redirection ne sont pas configurés dans les variables d\'environnement'
             });
         }
-
-        // Génération de la référence
-        reference = generateReference();
 
         // Construction des données de transaction avec validation des longueurs
         const transactionData = {
@@ -341,8 +350,8 @@ router.post('/api/payment/generate-link', async (req, res) => {
             owner_charge,
             operator_owner_charge,
             free_info: free_info ? free_info.substring(0, 15) : undefined,
-            failed_redirection_url_code:process.env.CODEURLREDIRECTFAILED,
-            success_redirection_url_code:process.env.CODEURLREDIRECTSUCCESS
+            failed_redirection_url_code: process.env.CODEURLREDIRECTFAILED,
+            success_redirection_url_code: process.env.CODEURLREDIRECTSUCCESS
         };
 
         // Requête vers l'API PVit
@@ -383,11 +392,21 @@ router.post('/api/payment/generate-link', async (req, res) => {
 
     } catch (error) {
         console.error('Erreur génération lien:', error);
+        
+        // Différencier les types d'erreurs
+        if (!reference) {
+            return res.status(400).json({
+                success: false,
+                message: 'Erreur dans les paramètres de la requête',
+                error: error.message
+            });
+        }
+
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la génération du lien',
             error: error.response?.data || error.message,
-            reference: reference || null
+            reference // La référence sera toujours définie ici
         });
     }
 });
