@@ -86,6 +86,7 @@ async function ensureValidSecretKey() {
 }
 
 // Routes
+
 router.post("/api/payment/secret-callback", async (req, res) => {
     try {
         const { secret_key } = req.body;
@@ -368,8 +369,9 @@ router.post('/api/payment/generate-link', async (req, res) => {
         );
 
         // Sauvegarde en base de données
+        // J'ai ajouté une valeur de secours si response.data.transaction_id est null ou undefined
         await Transaction.create({
-            transaction_id: response.data.transaction_id,
+            transaction_id: response.data.transaction_id || `LINK_${reference}`, 
             reference,
             amount,
             status: 'PENDING',
@@ -379,20 +381,36 @@ router.post('/api/payment/generate-link', async (req, res) => {
             operator: service === 'VISA_MASTERCARD' ? 'VISA' : null
         });
 
-        // Réponse avec le lien et les informations
+        console.log(`Transaction initiale LINK_${reference} sauvegardée, en attente de la notification.`);
+
+        // Attendre la notification du webhook pour cette référence
+        const transactionResult = await waitForTransactionCallback(reference);
+        
+        console.log("Transaction complétée via webhook:", transactionResult);
+
+        // Réponse avec les données complètes de la transaction reçues du webhook
         res.status(200).json({
             success: true,
+            message: 'Lien de paiement généré et transaction complétée',
             data: {
-                payment_link: response.data.payment_link,
-                transaction_id: response.data.transaction_id,
-                reference,
-                service
+                payment_link: response.data.payment_link, // Le lien initial de PVit
+                ...transactionResult, // Les données complètes de la transaction après le webhook
+                reference // Assurez-vous que la référence est incluse
             }
         });
 
     } catch (error) {
         console.error('Erreur génération lien:', error);
         
+        // Gérer spécifiquement l'erreur de timeout
+        if (error.message.includes('Timeout')) {
+            return res.status(408).json({
+                success: false,
+                message: 'Timeout en attendant la réponse du webhook de la transaction',
+                reference 
+            });
+        }
+
         // Différencier les types d'erreurs
         if (!reference) {
             return res.status(400).json({
