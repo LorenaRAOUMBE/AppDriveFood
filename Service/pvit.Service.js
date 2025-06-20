@@ -62,7 +62,7 @@ async function ensureValidSecretKey() {
 
             console.log('Renouvellement de la clé secrète...');
             await axios.post(
-                `${PVIT_BASE_URL}/HL7IUHBK7MHP3BTM/renew-secret`,
+                `${PVIT_BASE_URL}/BDNNTIUVGBLANGWF/renew-secret`,
                 qs.stringify(formData),
                 {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -222,7 +222,7 @@ router.post('/api/rest-transaction', async (req, res) => {
 
         // Requête PVit
         const response = await axios.post(
-            `${PVIT_BASE_URL}/ABYDMG3XVPUJEEWY/rest`,
+            `${PVIT_BASE_URL}/0H3U6T5XADVKU6PN/rest`,
             transactionData,
             {
                 headers: {
