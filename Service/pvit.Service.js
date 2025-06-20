@@ -62,7 +62,7 @@ async function ensureValidSecretKey() {
 
             console.log('Renouvellement de la clé secrète...');
             await axios.post(
-                `${PVIT_BASE_URL}/WPORYY2HIGCKDZWX/renew-secret`,
+                `${PVIT_BASE_URL}/HL7IUHBK7MHP3BTM/renew-secret`,
                 qs.stringify(formData),
                 {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -222,7 +222,7 @@ router.post('/api/rest-transaction', async (req, res) => {
 
         // Requête PVit
         const response = await axios.post(
-            `${PVIT_BASE_URL}/FH9WCKEIPITSHCY0/rest`,
+            `${PVIT_BASE_URL}/ABYDMG3XVPUJEEWY/rest`,
             transactionData,
             {
                 headers: {
@@ -347,7 +347,7 @@ router.post('/api/payment/generate-link', async (req, res) => {
             callback_url_code: process.env.CODEURLCALLBACK,
             customer_account_number: customer_account_number.substring(0, 20),
             merchant_operation_account_code: process.env.PVIT_ACCOUNT_ID,
-            transaction_type: "PAYMENT",
+            transaction_type:"PAYMENT",
             owner_charge,
             operator_owner_charge,
             free_info: free_info ? free_info.substring(0, 15) : undefined,

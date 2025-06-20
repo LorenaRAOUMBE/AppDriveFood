@@ -151,6 +151,12 @@ router.post("/connexion", async (req, res) => {
         if (!match) {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
+        // Vérification du statut du compte
+        if (user.verifie !== TRUE && user.statut_compte !== 'TRUE') {
+            return res.status(403).json({
+                message: "Veuillez vérifier votre adresse e-mail avant de vous connecter."
+            });
+        }
 
         const token = jwt.sign(
             { id: user.idUtilisateur, nom :user.nom, numeroDeTel: user.numeroDeTel , email: user.email, role: user.role, verifie: user.verifie },
