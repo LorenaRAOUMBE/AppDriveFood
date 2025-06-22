@@ -152,7 +152,7 @@ router.post("/connexion", async (req, res) => {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
         // Vérification du statut du compte
-        if (user.verifie !== TRUE && user.statut_compte !== 'TRUE') {
+        if (user.verifie !== TRUE && user.verifie !== 'TRUE') {
             return res.status(403).json({
                 message: "Veuillez vérifier votre adresse e-mail avant de vous connecter."
             });
