@@ -151,8 +151,25 @@ router.post("/connexion", async (req, res) => {
         if (!match) {
             return res.status(401).json({ message: "E-mail ou mot de passe incorrect." });
         }
-        // Vérification du statut du compte
-        if (user.verifie !== TRUE && user.verifie !== 'TRUE') {
+        // Vérification du statut 
+        if ( user.verifie !=='TRUE') {
+            // Générer un nouvel OTP
+            const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+            const otpExpiration = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+            // Mettre à jour l'OTP dans la base
+            await pool.query(
+                'UPDATE utilisateurs SET OTP = ?, otp_expires_at = ? WHERE idUtilisateur = ?',
+                [OTP, otp_expires_at, user.idUtilisateur]
+            );
+
+            // Envoyer l'OTP par email
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Vérification de votre compte - Code OTP',
+                html: `<p>Votre code OTP est : <strong>${OTP}</strong></p><p>Ce code est valide pendant 5 minutes.</p>`
+            });
             return res.status(403).json({
                 message: "Veuillez vérifier votre adresse e-mail avant de vous connecter."
             });
