@@ -160,7 +160,7 @@ router.post("/connexion", async (req, res) => {
             // Mettre à jour l'OTP dans la base
             await pool.query(
                 'UPDATE utilisateurs SET OTP = ?, otp_expires_at = ? WHERE idUtilisateur = ?',
-                [OTP, otp_expires_at, user.idUtilisateur]
+                [otpCode, otpExpiration, user.idUtilisateur]
             );
 
             // Envoyer l'OTP par email
@@ -168,7 +168,7 @@ router.post("/connexion", async (req, res) => {
                 from: process.env.EMAIL_USER,
                 to: email,
                 subject: 'Vérification de votre compte - Code OTP',
-                html: `<p>Votre code OTP est : <strong>${OTP}</strong></p><p>Ce code est valide pendant 5 minutes.</p>`
+                html: `<p>Votre code OTP est : <strong>${otpCode}</strong></p><p>Ce code est valide pendant 5 minutes.</p>`
             });
             return res.status(403).json({
                 message: "Veuillez vérifier votre adresse e-mail avant de vous connecter."
