@@ -28,10 +28,10 @@ router.get("/categorie/:idCategorie", async (req, res) => {
     const sql = "SELECT * FROM categorie WHERE idCategorie = ?";
 
     try {
-        // Déstructurez pour obtenir les lignes. 'rows' sera un tableau (vide ou avec un seul élément).
+ 
         const [rows] = await pool.query(sql, [id]);
 
-        // Correction: la variable 'rows' doit être utilisée, pas 'results' (qui était non déstructurée)
+   
         if (rows.length === 0) {
             // Renvoie un message clair si la catégorie n'est pas trouvée
             return res.status(404).json({ 
