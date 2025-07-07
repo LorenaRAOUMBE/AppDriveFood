@@ -10,7 +10,6 @@ router.get("/commande", async (req, res) => {
                 c.idCommande, 
                 c.idUtilisateur, 
                 u.nom AS nomUtilisateur, 
-                u.email AS emailUtilisateur,
                 c.idRestaurant, 
                 r.nom AS nomRestaurant,
                 c.date_com,             
@@ -51,7 +50,6 @@ router.get("/commande/:idCommande", async (req, res) => {
                 c.idCommande, 
                 c.idUtilisateur, 
                 u.nom AS nomUtilisateur, 
-                u.email AS emailUtilisateur,
                 c.idRestaurant, 
                 r.nom AS nomRestaurant,
                 c.date_com,             
@@ -79,11 +77,11 @@ router.get("/commande/:idCommande", async (req, res) => {
             SELECT 
                 cp.idPlat, 
                 p.nom AS nomPlat, 
-                cp.prix_unitaire,      -- Changement ici
+                cp.prix_unitaire,      
                 cp.quantite,
                 (cp.prix_unitaire * cp.quantite) AS sousTotal
             FROM 
-                Commande_Produits cp   -- Changement ici
+                Commande_Produits cp   
             JOIN 
                 plat p ON cp.idPlat = p.idPlat
             WHERE cp.idCommande = ?
@@ -282,10 +280,10 @@ router.get("/utilisateurs/:idUtilisateur/commande", async (req, res) => {
                 c.idCommande, 
                 c.idRestaurant, 
                 r.nom AS nomRestaurant,
-                c.date_com,             -- Changement ici
+                c.date_com,             
                 c.statut, 
-                c.modeDePaiement,       -- Nouveau champ
-                c.montant_total AS total -- Changement ici
+                c.modeDePaiement,       
+                c.montant_total AS total 
             FROM 
                 commande c
             JOIN 

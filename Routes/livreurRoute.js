@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../config.bd/db"); // S'appuie sur votre configuration mysql2/promise
+const pool = require("../config.bd/db"); 
 const router = express.Router();
 
 // --- Afficher tous les livreurs ---
